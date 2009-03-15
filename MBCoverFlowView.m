@@ -15,7 +15,7 @@ const float MBCoverFlowViewHorizontalMargin = 12.0;
 
 // Layer Dimensions
 const float MBCoverFlowViewCellSpacing = 14.0;
-const float MBCoverFlowViewCellWidth = 100.0;
+const float MBCoverFlowViewCellWidth = 140.0;
 const float MBCoverFlowViewCellHeight = 100.0;
 
 // Perspective parameters
@@ -99,7 +99,7 @@ static NSString *MBCoverFlowViewCellSizeKey = @"cellSize";
 	CGContextRef context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
 												 gradientRect.size.height, 8,  bytesPerRow, 
 												 CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
-	NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceWhite:0 alpha:.5] endingColor:[NSColor colorWithDeviceWhite:0 alpha:1.0]];
+	NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceWhite:0 alpha:0.6] endingColor:[NSColor colorWithDeviceWhite:0 alpha:1.0]];
 	NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
 	[NSGraphicsContext saveGraphicsState];
 	[NSGraphicsContext setCurrentContext:nsContext];
@@ -154,7 +154,10 @@ static NSString *MBCoverFlowViewCellSizeKey = @"cellSize";
 - (void)mouseDown:(NSEvent *)theEvent
 {
 	NSPoint mouseLocation = [self convertPoint:[theEvent locationInWindow] fromView:nil];
-	NSLog(@"Item: %i", [self indexOfItemAtPoint:mouseLocation]);
+	NSInteger clickedIndex = [self indexOfItemAtPoint:mouseLocation];
+	if (clickedIndex != NSNotFound) {
+		self.selectedIndex = clickedIndex;
+	}
 }
 
 #pragma mark NSView
