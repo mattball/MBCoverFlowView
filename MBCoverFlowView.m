@@ -133,11 +133,7 @@ static NSString *MBCoverFlowViewCellSizeKey = @"cellSize";
 }
 
 - (void)keyDown:(NSEvent *)theEvent
-{
-	// Slow motion if the shift key is held down
-	if ([theEvent modifierFlags] & (NSAlphaShiftKeyMask|NSShiftKeyMask))
-		[CATransaction setValue:[NSNumber numberWithFloat:2.0f] forKey:@"animationDuration"];
-	
+{	
 	switch ([theEvent keyCode]) {
 		case MBLeftArrowKeyCode:
 			self.selectedIndex -= 1;
@@ -191,6 +187,11 @@ static NSString *MBCoverFlowViewCellSizeKey = @"cellSize";
 		NSBeep();
 		return;
 	}
+	
+	if ([[NSApp currentEvent] modifierFlags] & (NSAlphaShiftKeyMask|NSShiftKeyMask))
+		[CATransaction setValue:[NSNumber numberWithFloat:2.0f] forKey:@"animationDuration"];
+	else
+		[CATransaction setValue:[NSNumber numberWithFloat:1.1f] forKey:@"animationDuration"];
 	
 	_selectedIndex = newIndex;
 	[_scrollLayer layoutIfNeeded];
