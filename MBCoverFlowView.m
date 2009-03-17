@@ -278,8 +278,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	infoFrame.origin.x = floor(([self frame].size.width - [_infoControl frame].size.width)/2);
 	infoFrame.origin.y = 40.0;
-	[_infoControl setFrame:infoFrame];
-	
+	[_infoControl setFrame:infoFrame];	
 }
 
 #pragma mark -
@@ -336,19 +335,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	frame.origin.y = -frame.size.height;
 	[reflectionLayer setFrame:frame];
 	reflectionLayer.name = @"reflection";
-	CATransform3D reflectionTransform = CATransform3DMakeScale(1, -1, 1);
-	reflectionLayer.transform = reflectionTransform;
+	reflectionLayer.transform = CATransform3DMakeScale(1, -1, 1);
 	[reflectionLayer setBackgroundColor:CGColorGetConstantColor(kCGColorWhite)];
 	[imageLayer addSublayer:reflectionLayer];
 	
 	CALayer *gradientLayer = [CALayer layer];
 	frame.origin.y += frame.size.height;
 	frame.origin.x -= 1.0;
-	frame.size.height += 1;
+	frame.size.height += 2.0;
 	frame.size.width += 2.0;
 	[gradientLayer setFrame:frame];
 	[gradientLayer setContents:(id)_shadowImage];
-	[gradientLayer setOpaque:NO];
+	gradientLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
 	[reflectionLayer addSublayer:gradientLayer];
 	
 	[_scrollLayer addSublayer:layer];
@@ -456,6 +454,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 	for (CALayer *sublayer in [layer sublayers]) {
 		CALayer *imageLayer = [[sublayer sublayers] objectAtIndex:0];
+		CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
 		
 		NSUInteger index = [[sublayer valueForKey:@"index"] integerValue];
 		CGRect frame;
@@ -465,6 +464,12 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		
 		CGRect imageFrame = frame;
 		imageFrame.origin = CGPointZero;
+		
+		CGRect reflectionFrame = imageFrame;
+		reflectionFrame.origin.y = -frame.size.height;
+		
+		CGRect gradientFrame = reflectionFrame;
+		gradientFrame.origin.y = 0;
 		
 		// Create the perspective effect
 		if (index < self.selectedIndex) {
@@ -488,6 +493,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		
 		[sublayer setFrame:frame];
 		[imageLayer setFrame:imageFrame];
+		[reflectionLayer setFrame:reflectionFrame];
+		[reflectionLayer setBounds:CGRectMake(0, 0, [reflectionLayer bounds].size.width, [reflectionLayer bounds].size.height)];
 	}
 }
 
