@@ -8,6 +8,8 @@
 
 #import "MBCoverFlowView.h"
 
+#import "NSImage+MBCoverFlowAdditions.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 // Constants
@@ -45,6 +47,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 @synthesize infoCell=_infoCell;
 @synthesize selectedIndex=_selectedIndex;
 @synthesize itemSize=_itemSize;
+@synthesize contents=_contents;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -68,12 +71,147 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		_rightTransform = CATransform3DMakeRotation(MBCoverFlowViewPerspectiveAngle, 0, -1, 0);
 	
 		_itemSize = NSMakeSize(MBCoverFlowViewDefaultItemWidth, MBCoverFlowViewDefaultItemHeight);
+	
+		
+		CALayer *rootLayer = [CALayer layer];
+		rootLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
+		rootLayer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
+		[self setLayer:rootLayer];
+		
+		_containerLayer = [CALayer layer];
+		_containerLayer.name = @"body";
+		[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMidX relativeTo:@"superlayer" attribute:kCAConstraintMidX]];
+		[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintWidth relativeTo:@"superlayer" attribute:kCAConstraintWidth offset:-20]];
+		[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
+		[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
+		[rootLayer addSublayer:_containerLayer];
+		
+		_scrollLayer = [CAScrollLayer layer];
+		_scrollLayer.scrollMode = kCAScrollHorizontally;
+		_scrollLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+		_scrollLayer.layoutManager = self;
+		[_containerLayer addSublayer:_scrollLayer];
+		
+		// Create a gradient image to use for image shadows
+		CGRect gradientRect;
+		gradientRect.origin = CGPointZero;
+		gradientRect.size = NSSizeToCGSize([self itemSize]);
+		size_t bytesPerRow = 4*gradientRect.size.width;
+		void* bitmapData = malloc(bytesPerRow * gradientRect.size.height);
+		CGContextRef context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
+													 gradientRect.size.height, 8,  bytesPerRow, 
+													 CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
+		NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceWhite:0 alpha:0.6] endingColor:[NSColor colorWithDeviceWhite:0 alpha:1.0]];
+		NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
+		[NSGraphicsContext saveGraphicsState];
+		[NSGraphicsContext setCurrentContext:nsContext];
+		[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:90];
+		[NSGraphicsContext restoreGraphicsState];
+		_shadowImage = CGBitmapContextCreateImage(context);
+		CGContextRelease(context);
+		free(bitmapData);
+		[gradient release];
+		
+		
+		/* create a pleasant gradient mask around our central layer.
+		 We don't have to worry about re-creating these when the window
+		 size changes because the images will be automatically interpolated
+		 to their new sizes; and as gradients, they are very well suited to
+		 interpolation. */
+		CALayer *maskLayer = [CALayer layer];
+		_leftGradientLayer = [CALayer layer];
+		_rightGradientLayer = [CALayer layer];
+		_bottomGradientLayer = [CALayer layer];
+		
+		// left
+		gradientRect.origin = CGPointZero;
+		gradientRect.size.width = [self frame].size.width;
+		gradientRect.size.height = [self frame].size.height;
+		bytesPerRow = 4*gradientRect.size.width;
+		bitmapData = malloc(bytesPerRow * gradientRect.size.height);
+		context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
+										gradientRect.size.height, 8,  bytesPerRow, 
+										CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
+		gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceWhite:0. alpha:1.] endingColor:[NSColor colorWithDeviceWhite:0. alpha:0]];
+		nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
+		[NSGraphicsContext saveGraphicsState];
+		[NSGraphicsContext setCurrentContext:nsContext];
+		[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:0];
+		[NSGraphicsContext restoreGraphicsState];
+		CGImageRef gradientImage = CGBitmapContextCreateImage(context);
+		_leftGradientLayer.contents = (id)gradientImage;
+		CGContextRelease(context);
+		CGImageRelease(gradientImage);
+		free(bitmapData);
+		
+		// right
+		bitmapData = malloc(bytesPerRow * gradientRect.size.height);
+		context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
+										gradientRect.size.height, 8,  bytesPerRow, 
+										CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
+		nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
+		[NSGraphicsContext saveGraphicsState];
+		[NSGraphicsContext setCurrentContext:nsContext];
+		[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:180];
+		[NSGraphicsContext restoreGraphicsState];
+		gradientImage = CGBitmapContextCreateImage(context);
+		_rightGradientLayer.contents = (id)gradientImage;
+		CGContextRelease(context);
+		CGImageRelease(gradientImage);
+		free(bitmapData);
+		
+		// bottom
+		gradientRect.size.width = [self frame].size.width;
+		gradientRect.size.height = 32;
+		bytesPerRow = 4*gradientRect.size.width;
+		bitmapData = malloc(bytesPerRow * gradientRect.size.height);
+		context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
+										gradientRect.size.height, 8,  bytesPerRow, 
+										CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
+		nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
+		[NSGraphicsContext saveGraphicsState];
+		[NSGraphicsContext setCurrentContext:nsContext];
+		[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:90];
+		[NSGraphicsContext restoreGraphicsState];
+		gradientImage = CGBitmapContextCreateImage(context);
+		_bottomGradientLayer.contents = (id)gradientImage;
+		CGContextRelease(context);
+		CGImageRelease(gradientImage);
+		free(bitmapData);
+		[gradient release];
+		
+		// the autoresizing mask allows it to change shape with the parent layer
+		maskLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+		maskLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
+		[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMinX]];
+		[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
+		[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
+		[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:-[self itemSize].width / 2]];
+		[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX]];
+		[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
+		[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
+		[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:[self itemSize].width / 2]];
+		[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX]];
+		[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
+		[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMinX]];
+		[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:32]];
+		
+		_bottomGradientLayer.masksToBounds = YES;
+		
+		[maskLayer addSublayer:_rightGradientLayer];
+		[maskLayer addSublayer:_leftGradientLayer];
+		[maskLayer addSublayer:_bottomGradientLayer];
+		// we make it a sublayer rather than a mask so that the overlapping alpha will work correctly
+		// without the use of a compositing filter
+		[_containerLayer addSublayer:maskLayer];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[_scrollLayer release];
+	[_containerLayer release];
 	self.infoCell = nil;
 	[_infoControl release];
 	CGImageRelease(_shadowImage);
@@ -82,147 +220,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)awakeFromNib
 {
-	CALayer *rootLayer = [CALayer layer];
-	rootLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
-	rootLayer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
-	
-	_containerLayer = [CALayer layer];
-	_containerLayer.name = @"body";
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMidX relativeTo:@"superlayer" attribute:kCAConstraintMidX]];
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintWidth relativeTo:@"superlayer" attribute:kCAConstraintWidth offset:-20]];
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
-	[rootLayer addSublayer:_containerLayer];
-	
-	_scrollLayer = [CAScrollLayer layer];
-	_scrollLayer.scrollMode = kCAScrollHorizontally;
-	_scrollLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-	_scrollLayer.layoutManager = self;
-	[_containerLayer addSublayer:_scrollLayer];
-	
-	// Create a gradient image to use for image shadows
-	CGRect gradientRect;
-	gradientRect.origin = CGPointZero;
-	gradientRect.size = NSSizeToCGSize([self itemSize]);
-	size_t bytesPerRow = 4*gradientRect.size.width;
-	void* bitmapData = malloc(bytesPerRow * gradientRect.size.height);
-	CGContextRef context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
-												 gradientRect.size.height, 8,  bytesPerRow, 
-												 CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
-	NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceWhite:0 alpha:0.6] endingColor:[NSColor colorWithDeviceWhite:0 alpha:1.0]];
-	NSGraphicsContext *nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
-	[NSGraphicsContext saveGraphicsState];
-	[NSGraphicsContext setCurrentContext:nsContext];
-	[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:90];
-	[NSGraphicsContext restoreGraphicsState];
-	_shadowImage = CGBitmapContextCreateImage(context);
-	CGContextRelease(context);
-	free(bitmapData);
-	[gradient release];
-	
-	
-	/* create a pleasant gradient mask around our central layer.
-	 We don't have to worry about re-creating these when the window
-	 size changes because the images will be automatically interpolated
-	 to their new sizes; and as gradients, they are very well suited to
-	 interpolation. */
-	CALayer *maskLayer = [CALayer layer];
-	_leftGradientLayer = [CALayer layer];
-	_rightGradientLayer = [CALayer layer];
-	_bottomGradientLayer = [CALayer layer];
-	
-	// left
-	gradientRect.origin = CGPointZero;
-	gradientRect.size.width = [self frame].size.width;
-	gradientRect.size.height = [self frame].size.height;
-	bytesPerRow = 4*gradientRect.size.width;
-	bitmapData = malloc(bytesPerRow * gradientRect.size.height);
-	context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
-									gradientRect.size.height, 8,  bytesPerRow, 
-									CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
-	gradient = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithDeviceWhite:0. alpha:1.] endingColor:[NSColor colorWithDeviceWhite:0. alpha:0]];
-	nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
-	[NSGraphicsContext saveGraphicsState];
-	[NSGraphicsContext setCurrentContext:nsContext];
-	[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:0];
-	[NSGraphicsContext restoreGraphicsState];
-	CGImageRef gradientImage = CGBitmapContextCreateImage(context);
-	_leftGradientLayer.contents = (id)gradientImage;
-	CGContextRelease(context);
-	CGImageRelease(gradientImage);
-	free(bitmapData);
-	
-	// right
-	bitmapData = malloc(bytesPerRow * gradientRect.size.height);
-	context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
-									gradientRect.size.height, 8,  bytesPerRow, 
-									CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
-	nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
-	[NSGraphicsContext saveGraphicsState];
-	[NSGraphicsContext setCurrentContext:nsContext];
-	[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:180];
-	[NSGraphicsContext restoreGraphicsState];
-	gradientImage = CGBitmapContextCreateImage(context);
-	_rightGradientLayer.contents = (id)gradientImage;
-	CGContextRelease(context);
-	CGImageRelease(gradientImage);
-	free(bitmapData);
-	
-	// bottom
-	gradientRect.size.width = [self frame].size.width;
-	gradientRect.size.height = 32;
-	bytesPerRow = 4*gradientRect.size.width;
-	bitmapData = malloc(bytesPerRow * gradientRect.size.height);
-	context = CGBitmapContextCreate(bitmapData, gradientRect.size.width,
-									gradientRect.size.height, 8,  bytesPerRow, 
-									CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), kCGImageAlphaPremultipliedFirst);
-	nsContext = [NSGraphicsContext graphicsContextWithGraphicsPort:context flipped:YES];
-	[NSGraphicsContext saveGraphicsState];
-	[NSGraphicsContext setCurrentContext:nsContext];
-	[gradient drawInRect:NSMakeRect(0, 0, gradientRect.size.width, gradientRect.size.height) angle:90];
-	[NSGraphicsContext restoreGraphicsState];
-	gradientImage = CGBitmapContextCreateImage(context);
-	_bottomGradientLayer.contents = (id)gradientImage;
-	CGContextRelease(context);
-	CGImageRelease(gradientImage);
-	free(bitmapData);
-	[gradient release];
-	
-	// the autoresizing mask allows it to change shape with the parent layer
-	maskLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-	maskLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMinX]];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:-[self itemSize].width / 2]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:[self itemSize].width / 2]];
-	[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX]];
-	[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
-	[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMinX]];
-	[_bottomGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:32]];
-	
-	_bottomGradientLayer.masksToBounds = YES;
-	
-	[maskLayer addSublayer:_rightGradientLayer];
-	[maskLayer addSublayer:_leftGradientLayer];
-	[maskLayer addSublayer:_bottomGradientLayer];
-	// we make it a sublayer rather than a mask so that the overlapping alpha will work correctly
-	// without the use of a compositing filter
-	[_containerLayer addSublayer:maskLayer];
-	
-	// Create a couple of test layers
-	[self _newLayer];
-	[self _newLayer];
-	[self _newLayer];
-	[self _newLayer];
-	[self _newLayer];
-	[self _newLayer];
-	
-	[self setLayer:rootLayer];
 	[self setWantsLayer:YES];
+	[self setItemSize:self.itemSize];
 }
 
 #pragma mark -
@@ -283,6 +282,30 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 #pragma mark -
 #pragma mark Subclass Methods
+
+- (void)setContents:(NSArray *)newContents
+{
+	if (_contents) {
+		[_contents release];
+		_contents = nil;
+	}
+	
+	if (newContents != nil) {
+		_contents = [newContents copy];
+		for (NSImage *image in _contents) {
+			CALayer *layer = [self _newLayer];
+			CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
+			CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
+			
+			CGImageRef imageRef = [image imageRef];
+			
+			imageLayer.contents = (id)imageRef;
+			reflectionLayer.contents = (id)imageRef;
+			imageLayer.backgroundColor = NULL;
+			reflectionLayer.backgroundColor = NULL;
+		}
+	}
+}
 
 - (void)setSelectedIndex:(NSInteger)newIndex
 {

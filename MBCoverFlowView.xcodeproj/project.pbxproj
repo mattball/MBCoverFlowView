@@ -13,6 +13,8 @@
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C9D1735A0F6B38CD0097827F /* MBCoverFlowView.m in Sources */ = {isa = PBXBuildFile; fileRef = C9D173590F6B38CD0097827F /* MBCoverFlowView.m */; };
 		C9D1737A0F6B3ADC0097827F /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9D173790F6B3ADC0097827F /* QuartzCore.framework */; };
+		C9D178230F6F97D60097827F /* MBCoverFlowViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C9D178220F6F97D60097827F /* MBCoverFlowViewController.m */; };
+		C9E9ACB60F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = C9E9ACB50F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +31,10 @@
 		C9D173580F6B38CD0097827F /* MBCoverFlowView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBCoverFlowView.h; sourceTree = "<group>"; };
 		C9D173590F6B38CD0097827F /* MBCoverFlowView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBCoverFlowView.m; sourceTree = "<group>"; };
 		C9D173790F6B3ADC0097827F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
+		C9D178210F6F97D60097827F /* MBCoverFlowViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBCoverFlowViewController.h; sourceTree = "<group>"; };
+		C9D178220F6F97D60097827F /* MBCoverFlowViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBCoverFlowViewController.m; sourceTree = "<group>"; };
+		C9E9ACB40F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSImage+MBCoverFlowAdditions.h"; sourceTree = "<group>"; };
+		C9E9ACB50F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSImage+MBCoverFlowAdditions.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +55,10 @@
 			children = (
 				C9D173580F6B38CD0097827F /* MBCoverFlowView.h */,
 				C9D173590F6B38CD0097827F /* MBCoverFlowView.m */,
+				C9D178210F6F97D60097827F /* MBCoverFlowViewController.h */,
+				C9D178220F6F97D60097827F /* MBCoverFlowViewController.m */,
+				C9E9ACB40F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.h */,
+				C9E9ACB50F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -177,6 +187,8 @@
 			files = (
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				C9D1735A0F6B38CD0097827F /* MBCoverFlowView.m in Sources */,
+				C9D178230F6F97D60097827F /* MBCoverFlowViewController.m in Sources */,
+				C9E9ACB60F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

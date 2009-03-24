@@ -24,11 +24,13 @@
 	CATransform3D _rightTransform;
 	
 	NSSize _itemSize;
+	NSArray *_contents;
 }
 
 @property (nonatomic, retain) NSCell *infoCell;
 @property (nonatomic, assign) NSInteger selectedIndex;
 @property (nonatomic, assign) NSSize itemSize;
+@property (nonatomic, copy) NSArray *contents;
 
 /**
  * @name    Layout
