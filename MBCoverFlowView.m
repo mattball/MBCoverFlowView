@@ -376,11 +376,13 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		[self.accessoryController.view removeFromSuperview];
 		[_accessoryController release];
 		_accessoryController = nil;
+		[self setNextResponder:nil];
 	}
 	
 	if (aController != nil) {
 		_accessoryController = [aController retain];
 		[self addSubview:self.accessoryController.view];
+		[self setNextResponder:self.accessoryController];
 	}
 	
 	[self resizeSubviewsWithOldSize:[self frame].size];
