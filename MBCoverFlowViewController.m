@@ -8,6 +8,7 @@
 
 #import "MBCoverFlowViewController.h"
 
+#import "MBCoverFlowView.h"
 
 @implementation MBCoverFlowViewController
 
@@ -30,8 +31,21 @@
 		count++;
 	}
 	
-	[self.view setContents:images];
+	[(MBCoverFlowView *)self.view setContents:images];
 	
+	NSViewController *labelViewController = [[NSViewController alloc] initWithNibName:nil bundle:nil];
+	NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];
+	[label setBordered:NO];
+	[label setBezeled:NO];
+	[label setObjectValue:@"Test"];
+	[label setDrawsBackground:NO];
+	[label setTextColor:[NSColor whiteColor]];
+	[label setFont:[NSFont boldSystemFontOfSize:12.0]];
+	[label sizeToFit];
+	[labelViewController setView:label];
+	[label release];
+	[(MBCoverFlowView *)self.view setAccessoryController:labelViewController];
+	[labelViewController release];
 }
 
 @end

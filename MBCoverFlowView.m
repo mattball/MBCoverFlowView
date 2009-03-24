@@ -23,7 +23,7 @@ const float MBCoverFlowViewDefaultItemHeight = 100.0;
 
 const float MBCoverFlowViewTopMargin = 30.0;
 
-#define MBCoverFlowViewContainerMinY (NSMaxY([_infoControl frame]) - 3*[self itemSize].height/4)
+#define MBCoverFlowViewContainerMinY (NSMaxY([self.accessoryController.view frame]) - 3*[self itemSize].height/4)
 
 // Perspective parameters
 const float MBCoverFlowViewPerspectiveCenterPosition = 100.0;
@@ -44,10 +44,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 @implementation MBCoverFlowView
 
-@synthesize infoCell=_infoCell;
-@synthesize selectedIndex=_selectedIndex;
-@synthesize itemSize=_itemSize;
-@synthesize contents=_contents;
+@synthesize accessoryController=_accessoryController, selectedIndex=_selectedIndex, 
+            itemSize=_itemSize, contents=_contents;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -55,17 +53,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (id)initWithFrame:(NSRect)frameRect
 {
 	if (self = [super initWithFrame:frameRect]) {
-		_infoCell = [[NSTextFieldCell alloc] initTextCell:@"Test"];
-		[_infoCell setBordered:NO];
-		[_infoCell setBezeled:NO];
-		[(NSTextFieldCell *)_infoCell setTextColor:[NSColor whiteColor]];
-		[_infoCell setFont:[NSFont boldSystemFontOfSize:12.0]];
-		
-		// We need something to host the cell, since we can't draw it ourselves
-		_infoControl = [[NSControl alloc] initWithFrame:NSMakeRect(0, 0, 1, 1)];
-		[_infoControl setCell:_infoCell];
-		[_infoControl sizeToFit];
-		[self addSubview:_infoControl];
+		[self setAutoresizesSubviews:YES];
 		
 		_leftTransform = CATransform3DMakeRotation(-0.79, 0, -1, 0);
 		_rightTransform = CATransform3DMakeRotation(MBCoverFlowViewPerspectiveAngle, 0, -1, 0);
@@ -212,8 +200,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {
 	[_scrollLayer release];
 	[_containerLayer release];
-	self.infoCell = nil;
-	[_infoControl release];
+	self.accessoryController = nil;
 	CGImageRelease(_shadowImage);
 	[super dealloc];
 }
@@ -221,7 +208,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (void)awakeFromNib
 {
 	[self setWantsLayer:YES];
-	[self setItemSize:self.itemSize];
 }
 
 #pragma mark -
@@ -268,16 +254,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize
 {
-	// Place the info control
-	[_infoControl sizeToFit];
-	NSRect infoFrame = [_infoControl frame];
-	// Make sure to constrain the info to fit within the view
-	if (infoFrame.size.width > [self frame].size.width - 2*MBCoverFlowViewHorizontalMargin) {
-		infoFrame.size.width = [self frame].size.width - 2*MBCoverFlowViewHorizontalMargin;
+	if (self.accessoryController.view) {
+		NSRect accessoryFrame = [self.accessoryController.view frame];
+		accessoryFrame.origin.x = floor(([self frame].size.width - accessoryFrame.size.width)/2);
+		accessoryFrame.origin.y = 40.0;
+		[self.accessoryController.view setFrame:accessoryFrame];
 	}
-	infoFrame.origin.x = floor(([self frame].size.width - [_infoControl frame].size.width)/2);
-	infoFrame.origin.y = 40.0;
-	[_infoControl setFrame:infoFrame];	
+	
+	_containerLayer.constraints = nil;
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMidX relativeTo:@"superlayer" attribute:kCAConstraintMidX]];
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintWidth relativeTo:@"superlayer" attribute:kCAConstraintWidth offset:-20]];
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
 }
 
 #pragma mark -
@@ -305,6 +293,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 			reflectionLayer.backgroundColor = NULL;
 		}
 	}
+	
+	self.selectedIndex = self.selectedIndex;
 }
 
 - (void)setSelectedIndex:(NSInteger)newIndex
@@ -375,6 +365,25 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[_scrollLayer addSublayer:layer];
 	
 	return layer;
+}
+
+- (void)setAccessoryController:(NSViewController *)aController
+{
+	if (aController == self.accessoryController)
+		return;
+	
+	if (self.accessoryController != nil) {
+		[self.accessoryController.view removeFromSuperview];
+		[_accessoryController release];
+		_accessoryController = nil;
+	}
+	
+	if (aController != nil) {
+		_accessoryController = [aController retain];
+		[self addSubview:self.accessoryController.view];
+	}
+	
+	[self resizeSubviewsWithOldSize:[self frame].size];
 }
 
 #pragma mark Layout

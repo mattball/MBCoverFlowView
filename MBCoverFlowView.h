@@ -10,8 +10,6 @@
 #import <QuartzCore/QuartzCore.h>
 
 @interface MBCoverFlowView : NSView {
-	NSCell *_infoCell;
-	NSControl *_infoControl;
 	NSInteger _selectedIndex;
 	CAScrollLayer *_scrollLayer;
 	CALayer *_containerLayer;
@@ -25,12 +23,14 @@
 	
 	NSSize _itemSize;
 	NSArray *_contents;
+	
+	NSViewController *_accessoryController;
 }
 
-@property (nonatomic, retain) NSCell *infoCell;
 @property (nonatomic, assign) NSInteger selectedIndex;
 @property (nonatomic, assign) NSSize itemSize;
 @property (nonatomic, copy) NSArray *contents;
+@property (nonatomic, retain) NSViewController *accessoryController;
 
 /**
  * @name    Layout
