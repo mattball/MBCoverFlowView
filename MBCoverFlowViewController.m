@@ -31,7 +31,7 @@
 		count++;
 	}
 	
-	[(MBCoverFlowView *)self.view setContents:images];
+	[(MBCoverFlowView *)self.view setContent:images];
 	
 	NSViewController *labelViewController = [[NSViewController alloc] initWithNibName:nil bundle:nil];
 	NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];

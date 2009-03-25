@@ -44,8 +44,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 @implementation MBCoverFlowView
 
-@synthesize accessoryController=_accessoryController, selectedIndex=_selectedIndex, 
-            itemSize=_itemSize, contents=_contents;
+@synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
+            itemSize=_itemSize, content=_content;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -224,10 +224,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {	
 	switch ([theEvent keyCode]) {
 		case MBLeftArrowKeyCode:
-			self.selectedIndex -= 1;
+			self.selectionIndex -= 1;
 			break;
 		case MBRightArrowKeyCode:
-			self.selectedIndex += 1;
+			self.selectionIndex += 1;
 			break;
 		default:
 			[self setItemSize:NSMakeSize(self.itemSize.width+14, self.itemSize.height+10)];
@@ -241,7 +241,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	NSPoint mouseLocation = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	NSInteger clickedIndex = [self indexOfItemAtPoint:mouseLocation];
 	if (clickedIndex != NSNotFound) {
-		self.selectedIndex = clickedIndex;
+		self.selectionIndex = clickedIndex;
 	}
 }
 
@@ -271,16 +271,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 #pragma mark -
 #pragma mark Subclass Methods
 
-- (void)setContents:(NSArray *)newContents
+#pragma mark Loading Data
+
+- (void)setContent:(NSArray *)newContents
 {
-	if (_contents) {
-		[_contents release];
-		_contents = nil;
+	if (_content) {
+		[_content release];
+		_content = nil;
 	}
 	
 	if (newContents != nil) {
-		_contents = [newContents copy];
-		for (NSImage *image in _contents) {
+		_content = [newContents copy];
+		for (NSImage *image in self.content) {
 			CALayer *layer = [self _newLayer];
 			CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
 			CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
@@ -294,10 +296,55 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		}
 	}
 	
-	self.selectedIndex = self.selectedIndex;
+	self.selectionIndex = self.selectionIndex;
 }
 
-- (void)setSelectedIndex:(NSInteger)newIndex
+#pragma mark Setting Display Attributes
+
+- (void)setItemSize:(NSSize)newSize
+{
+	if (newSize.width <= 0) {
+		newSize.width = MBCoverFlowViewDefaultItemWidth;
+	}
+	
+	if (newSize.height <= 0) {
+		newSize.height = MBCoverFlowViewDefaultItemHeight;
+	}
+	
+	_itemSize = newSize;
+	
+	// Update all the various constraints which depend on the item size
+	_containerLayer.constraints = nil;
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMidX relativeTo:@"superlayer" attribute:kCAConstraintMidX]];
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintWidth relativeTo:@"superlayer" attribute:kCAConstraintWidth offset:-20]];
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
+	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
+	
+	_leftGradientLayer.constraints = nil;
+	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMinX]];
+	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
+	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
+	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:-[self itemSize].width / 2]];
+	_rightGradientLayer.constraints = nil;
+	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX]];
+	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
+	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
+	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:[self itemSize].width / 2]];
+	
+	// Update the view
+	[self.layer setNeedsLayout];
+	
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectionIndex];
+	CGRect layerFrame = [layer frame];
+	
+	// Scroll so the selected item is centered
+	[_scrollLayer scrollToPoint:CGPointMake([self _positionOfSelectedItem], layerFrame.origin.y)];
+	
+}
+
+#pragma mark Managing the Selection
+
+- (void)setSelectionIndex:(NSInteger)newIndex
 {
 	if (newIndex >= [[_scrollLayer sublayers] count] || newIndex < 0) {
 		NSBeep();
@@ -309,15 +356,85 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	else
 		[CATransaction setValue:[NSNumber numberWithFloat:1.1f] forKey:@"animationDuration"];
 	
-	_selectedIndex = newIndex;
+	_selectionIndex = newIndex;
 	[_scrollLayer layoutIfNeeded];
 	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:_selectedIndex];
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:_selectionIndex];
 	CGRect layerFrame = [layer frame];
 	
 	// Scroll so the selected item is centered
 	[_scrollLayer scrollToPoint:CGPointMake([self _positionOfSelectedItem], layerFrame.origin.y)];
 }
+
+- (void)setAccessoryController:(NSViewController *)aController
+{
+	if (aController == self.accessoryController)
+		return;
+	
+	if (self.accessoryController != nil) {
+		[self.accessoryController.view removeFromSuperview];
+		[_accessoryController release];
+		_accessoryController = nil;
+		[self setNextResponder:nil];
+	}
+	
+	if (aController != nil) {
+		_accessoryController = [aController retain];
+		[self addSubview:self.accessoryController.view];
+		[self setNextResponder:self.accessoryController];
+	}
+	
+	[self resizeSubviewsWithOldSize:[self frame].size];
+}
+
+#pragma mark Layout Support
+
+- (NSInteger)indexOfItemAtPoint:(NSPoint)aPoint
+{
+	// Check the selected item first
+	if (NSPointInRect(aPoint, [self rectForItemAtIndex:self.selectionIndex])) {
+		return self.selectionIndex;
+	}
+	
+	// Check the items to the left, in descending order
+	NSInteger index = self.selectionIndex-1;
+	while (index >= 0) {
+		NSRect layerRect = [self rectForItemAtIndex:index];
+		if (NSPointInRect(aPoint, layerRect)) {
+			return index;
+		}
+		index--;
+	}
+	
+	// Check the items to the right, in ascending order
+	index = self.selectionIndex+1;
+	while (index < [[_scrollLayer sublayers] count]) {
+		NSRect layerRect = [self rectForItemAtIndex:index];
+		if (NSPointInRect(aPoint, layerRect)) {
+			return index;
+		}
+		index++;
+	}
+	
+	return NSNotFound;
+}
+
+// FIXME: The frame returned is not quite wide enough. Don't know why -- probably due to the transforms
+- (NSRect)rectForItemAtIndex:(NSInteger)index
+{
+	if (index < 0 || index >= [[_scrollLayer sublayers] count]) {
+		return NSZeroRect;
+	}
+	
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:index];
+	CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
+	
+	CGRect frame = [imageLayer convertRect:[imageLayer frame] toLayer:self.layer];
+	return NSRectFromCGRect(frame);
+}
+
+#pragma mark -
+#pragma mark Private Methods
 
 - (CALayer *)_newLayer
 {
@@ -367,114 +484,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	return layer;
 }
 
-- (void)setAccessoryController:(NSViewController *)aController
-{
-	if (aController == self.accessoryController)
-		return;
-	
-	if (self.accessoryController != nil) {
-		[self.accessoryController.view removeFromSuperview];
-		[_accessoryController release];
-		_accessoryController = nil;
-		[self setNextResponder:nil];
-	}
-	
-	if (aController != nil) {
-		_accessoryController = [aController retain];
-		[self addSubview:self.accessoryController.view];
-		[self setNextResponder:self.accessoryController];
-	}
-	
-	[self resizeSubviewsWithOldSize:[self frame].size];
-}
-
-#pragma mark Layout
-
 - (float)_positionOfSelectedItem
 {
 	// this is the same math used in layoutSublayersOfLayer:, before tweaking
-	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectedIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
-}
-
-- (NSInteger)indexOfItemAtPoint:(NSPoint)aPoint
-{
-	// Check the selected item first
-	if (NSPointInRect(aPoint, [self frameOfItemAtIndex:self.selectedIndex])) {
-		return self.selectedIndex;
-	}
-	
-	// Check the items to the left, in descending order
-	NSInteger index = self.selectedIndex-1;
-	while (index >= 0) {
-		NSRect layerRect = [self frameOfItemAtIndex:index];
-		if (NSPointInRect(aPoint, layerRect)) {
-			return index;
-		}
-		index--;
-	}
-	
-	// Check the items to the right, in ascending order
-	index = self.selectedIndex+1;
-	while (index < [[_scrollLayer sublayers] count]) {
-		NSRect layerRect = [self frameOfItemAtIndex:index];
-		if (NSPointInRect(aPoint, layerRect)) {
-			return index;
-		}
-		index++;
-	}
-	
-	return NSNotFound;
-}
-
-// FIXME: The frame returned is not quite wide enough. Don't know why -- probably due to the transforms
-- (NSRect)frameOfItemAtIndex:(NSUInteger)index
-{
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:index];
-	CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
-	
-	CGRect frame = [imageLayer convertRect:[imageLayer frame] toLayer:self.layer];
-	return NSRectFromCGRect(frame);
-}
-
-- (void)setItemSize:(NSSize)newSize
-{
-	if (newSize.width <= 0) {
-		newSize.width = MBCoverFlowViewDefaultItemWidth;
-	}
-	
-	if (newSize.height <= 0) {
-		newSize.height = MBCoverFlowViewDefaultItemHeight;
-	}
-	
-	_itemSize = newSize;
-	
-	// Update all the various constraints which depend on the item size
-	_containerLayer.constraints = nil;
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMidX relativeTo:@"superlayer" attribute:kCAConstraintMidX]];
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintWidth relativeTo:@"superlayer" attribute:kCAConstraintWidth offset:-20]];
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
-	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
-	
-	_leftGradientLayer.constraints = nil;
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMinX]];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
-	[_leftGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:-[self itemSize].width / 2]];
-	_rightGradientLayer.constraints = nil;
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxX relativeTo:@"superlayer" attribute:kCAConstraintMaxX]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY]];
-	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:[self itemSize].width / 2]];
-	
-	// Update the view
-	[self.layer setNeedsLayout];
-	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:_selectedIndex];
-	CGRect layerFrame = [layer frame];
-	
-	// Scroll so the selected item is centered
-	[_scrollLayer scrollToPoint:CGPointMake([self _positionOfSelectedItem], layerFrame.origin.y)];
-	
+	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectionIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
 }
 
 #pragma mark -
@@ -506,18 +519,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		gradientFrame.origin.y = 0;
 		
 		// Create the perspective effect
-		if (index < self.selectedIndex) {
+		if (index < self.selectionIndex) {
 			// Left
-			frame.origin.x += [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(self.selectedIndex - index - MBCoverFlowViewPerspectiveRowScaleFactor);
+			frame.origin.x += [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(self.selectionIndex - index - MBCoverFlowViewPerspectiveRowScaleFactor);
 			imageLayer.transform = _leftTransform;
 			imageLayer.zPosition = MBCoverFlowViewPerspectiveSidePosition;
-			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (self.selectedIndex - index);
-		} else if (index > self.selectedIndex) {
+			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (self.selectionIndex - index);
+		} else if (index > self.selectionIndex) {
 			// Right
-			frame.origin.x -= [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(index - self.selectedIndex - MBCoverFlowViewPerspectiveRowScaleFactor);
+			frame.origin.x -= [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(index - self.selectionIndex - MBCoverFlowViewPerspectiveRowScaleFactor);
 			imageLayer.transform = _rightTransform;
 			imageLayer.zPosition = MBCoverFlowViewPerspectiveSidePosition;
-			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (index - self.selectedIndex);
+			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (index - self.selectionIndex);
 		} else {
 			// Center
 			imageLayer.transform = CATransform3DIdentity;
