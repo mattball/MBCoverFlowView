@@ -97,6 +97,16 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 	[self setFloatValue:((float)value / (float)self.numberOfIncrements)+0.01];
 }
 
+- (void)setNumberOfIncrements:(NSUInteger)newIncrements
+{
+	_numberOfIncrements = newIncrements;
+	if (newIncrements > 0) {
+		[self setKnobProportion:(1.0/(self.numberOfIncrements+1))];
+	} else {
+		[self setKnobProportion:1.0];
+	}
+}
+
 /* The documentation for NSScroller says to use -drawArrow:highlight:, but
  * that's never called. -drawArrow:highlightPart: is.
  */

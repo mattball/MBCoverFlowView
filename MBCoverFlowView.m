@@ -62,7 +62,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		
 		// Create the scroller
 		_scroller = [[MBCoverFlowScroller alloc] initWithFrame:NSMakeRect(10, 10, 400, 16)];
-		[_scroller setKnobProportion:1.0];
 		[_scroller setEnabled:YES];
 		[_scroller setTarget:self];
 		[_scroller setAction:@selector(scrollerWasClicked:)];
@@ -244,7 +243,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 			self.selectionIndex += 1;
 			break;
 		default:
-			[self setItemSize:NSMakeSize(self.itemSize.width+14, self.itemSize.height+10)];
 			[super keyDown:theEvent];
 			break;
 	}
@@ -274,11 +272,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	scrollerFrame.origin.x = ([self frame].size.width - scrollerFrame.size.width)/2;
 	scrollerFrame.origin.y = MBCoverFlowViewBottomMargin;
 	[_scroller setFrame:scrollerFrame];
-	if ([[self content] count]) {
-		[_scroller setKnobProportion:(1.0/[[self content] count])];
-	} else {
-		[_scroller setKnobProportion:1.0];
-	}
 	
 	if (self.accessoryController.view) {
 		NSRect accessoryFrame = [self.accessoryController.view frame];
