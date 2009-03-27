@@ -1,10 +1,28 @@
-//
-//  MBCoverFlowView.m
-//  MBCoverFlowView
-//
-//  Created by Matt Ball on 3/13/09.
-//  Copyright 2009 Daybreak Apps. All rights reserved.
-//
+/*
+ 
+ The MIT License
+ 
+ Copyright (c) 2009 Matthew Ball
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ 
+ */
 
 #import "MBCoverFlowView.h"
 
@@ -44,6 +62,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 @interface MBCoverFlowView ()
 - (float)_positionOfSelectedItem;
 - (CALayer *)_newLayer;
+- (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
 @end
 
 
@@ -64,7 +83,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		_scroller = [[MBCoverFlowScroller alloc] initWithFrame:NSMakeRect(10, 10, 400, 16)];
 		[_scroller setEnabled:YES];
 		[_scroller setTarget:self];
-		[_scroller setAction:@selector(scrollerWasClicked:)];
+		[_scroller setAction:@selector(_scrollerChange:)];
 		[self addSubview:_scroller];
 		
 		_leftTransform = CATransform3DMakeRotation(-0.79, 0, -1, 0);
@@ -510,7 +529,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectionIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
 }
 
-- (void)scrollerWasClicked:(NSScroller *)sender
+- (void)_scrollerChange:(MBCoverFlowScroller *)sender
 {
 	NSScrollerPart clickedPart = [sender hitPart];
 	if (clickedPart == NSScrollerIncrementLine) {
