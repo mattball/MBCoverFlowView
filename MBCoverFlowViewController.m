@@ -37,6 +37,8 @@
 	NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];
 	[label setBordered:NO];
 	[label setBezeled:NO];
+	[label setEditable:NO];
+	[label setSelectable:NO];
 	[label setObjectValue:@"Test"];
 	[label setDrawsBackground:NO];
 	[label setTextColor:[NSColor whiteColor]];

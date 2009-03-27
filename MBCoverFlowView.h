@@ -9,6 +9,8 @@
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
 
+@class MBCoverFlowScroller;
+
 @interface MBCoverFlowView : NSView {
 	NSInteger _selectionIndex;
 	
@@ -26,6 +28,8 @@
 	NSArray *_content;
 	
 	NSViewController *_accessoryController;
+	
+	MBCoverFlowScroller *_scroller;
 }
 
 /**

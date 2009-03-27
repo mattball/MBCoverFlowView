@@ -8,6 +8,7 @@
 
 #import "MBCoverFlowView.h"
 
+#import "MBCoverFlowScroller.h"
 #import "NSImage+MBCoverFlowAdditions.h"
 
 #import <QuartzCore/QuartzCore.h>
@@ -22,6 +23,10 @@ const float MBCoverFlowViewDefaultItemWidth = 140.0;
 const float MBCoverFlowViewDefaultItemHeight = 100.0;
 
 const float MBCoverFlowViewTopMargin = 30.0;
+const float MBCoverFlowViewBottomMargin = 20.0;
+
+const float MBCoverFlowScrollerHorizontalMargin = 80.0;
+const float MBCoverFlowScrollerVerticalSpacing = 16.0;
 
 #define MBCoverFlowViewContainerMinY (NSMaxY([self.accessoryController.view frame]) - 3*[self itemSize].height/4)
 
@@ -54,6 +59,12 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {
 	if (self = [super initWithFrame:frameRect]) {
 		[self setAutoresizesSubviews:YES];
+		
+		// Create the scroller
+		_scroller = [[MBCoverFlowScroller alloc] initWithFrame:NSMakeRect(10, 10, 400, 16)];
+		[_scroller setKnobProportion:1.0];
+		[_scroller setEnabled:YES];
+		[self addSubview:_scroller];
 		
 		_leftTransform = CATransform3DMakeRotation(-0.79, 0, -1, 0);
 		_rightTransform = CATransform3DMakeRotation(MBCoverFlowViewPerspectiveAngle, 0, -1, 0);
@@ -198,6 +209,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)dealloc
 {
+	[_scroller release];
 	[_scrollLayer release];
 	[_containerLayer release];
 	self.accessoryController = nil;
@@ -254,10 +266,22 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize
 {
+	// Reposition the scroller
+	NSRect scrollerFrame = [_scroller frame];
+	scrollerFrame.size.width = [self frame].size.width - 2*MBCoverFlowScrollerHorizontalMargin;
+	scrollerFrame.origin.x = ([self frame].size.width - scrollerFrame.size.width)/2;
+	scrollerFrame.origin.y = MBCoverFlowViewBottomMargin;
+	[_scroller setFrame:scrollerFrame];
+	if ([[self content] count]) {
+		[_scroller setKnobProportion:(1.0/[[self content] count])];
+	} else {
+		[_scroller setKnobProportion:1.0];
+	}
+	
 	if (self.accessoryController.view) {
 		NSRect accessoryFrame = [self.accessoryController.view frame];
 		accessoryFrame.origin.x = floor(([self frame].size.width - accessoryFrame.size.width)/2);
-		accessoryFrame.origin.y = 40.0;
+		accessoryFrame.origin.y = NSMaxY([_scroller frame]) + MBCoverFlowScrollerVerticalSpacing;
 		[self.accessoryController.view setFrame:accessoryFrame];
 	}
 	
