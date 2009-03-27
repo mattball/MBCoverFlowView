@@ -10,7 +10,9 @@
 
 
 @interface MBCoverFlowScroller : NSScroller {
-	
+	NSUInteger _numberOfIncrements;
 }
+
+@property (nonatomic, assign) NSUInteger numberOfIncrements;
 
 @end

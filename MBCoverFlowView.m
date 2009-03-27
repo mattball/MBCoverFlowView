@@ -64,6 +64,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		_scroller = [[MBCoverFlowScroller alloc] initWithFrame:NSMakeRect(10, 10, 400, 16)];
 		[_scroller setKnobProportion:1.0];
 		[_scroller setEnabled:YES];
+		[_scroller setTarget:self];
+		[_scroller setAction:@selector(scrollerWasClicked:)];
 		[self addSubview:_scroller];
 		
 		_leftTransform = CATransform3DMakeRotation(-0.79, 0, -1, 0);
@@ -320,6 +322,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		}
 	}
 	
+	[_scroller setNumberOfIncrements:([self.content count]-1)];
 	self.selectionIndex = self.selectionIndex;
 }
 
@@ -371,7 +374,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (void)setSelectionIndex:(NSInteger)newIndex
 {
 	if (newIndex >= [[_scrollLayer sublayers] count] || newIndex < 0) {
-		NSBeep();
 		return;
 	}
 	
@@ -388,6 +390,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 	// Scroll so the selected item is centered
 	[_scrollLayer scrollToPoint:CGPointMake([self _positionOfSelectedItem], layerFrame.origin.y)];
+	[_scroller setIntegerValue:self.selectionIndex];
 }
 
 - (void)setAccessoryController:(NSViewController *)aController
@@ -512,6 +515,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {
 	// this is the same math used in layoutSublayersOfLayer:, before tweaking
 	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectionIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
+}
+
+- (void)scrollerWasClicked:(NSScroller *)sender
+{
+	NSScrollerPart clickedPart = [sender hitPart];
+	if (clickedPart == NSScrollerIncrementLine) {
+		self.selectionIndex += 1;
+	} else if (clickedPart == NSScrollerDecrementLine) {
+		self.selectionIndex -= 1;
+	} else if (clickedPart == NSScrollerKnob) {
+		self.selectionIndex = [sender integerValue];
+	}
 }
 
 #pragma mark -

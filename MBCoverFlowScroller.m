@@ -21,6 +21,8 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 
 @implementation MBCoverFlowScroller
 
+@synthesize numberOfIncrements=_numberOfIncrements;
+
 - (void)drawRect:(NSRect)rect
 {
 	[self drawKnobSlotInRect:[self rectForPart:NSScrollerKnobSlot] highlight:NO] ;
@@ -71,7 +73,9 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 		rect.size.width = fmax(maxWidth * [self knobProportion], minWidth);
 		
 		rect.origin.x = NSMaxX([self rectForPart:NSScrollerDecrementLine]) - 8.0 - 1.0;
-		rect.origin.x += [self floatValue] * (maxWidth - rect.size.width);
+		
+		float incrementWidth = (maxWidth - rect.size.width) / (self.numberOfIncrements);
+		rect.origin.x += [self integerValue] * incrementWidth;
 		
 		return rect;
 	} else if (aPart == NSScrollerDecrementPage) {
@@ -81,6 +85,16 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 	}
 
 	return NSZeroRect;
+}
+
+- (NSInteger)integerValue
+{
+	return floor([self floatValue] * (self.numberOfIncrements));
+}
+
+- (void)setIntegerValue:(NSInteger)value
+{
+	[self setFloatValue:((float)value / (float)self.numberOfIncrements)+0.01];
 }
 
 /* The documentation for NSScroller says to use -drawArrow:highlight:, but
