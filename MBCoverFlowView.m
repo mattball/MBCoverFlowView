@@ -46,6 +46,8 @@ const float MBCoverFlowViewBottomMargin = 20.0;
 const float MBCoverFlowScrollerHorizontalMargin = 80.0;
 const float MBCoverFlowScrollerVerticalSpacing = 16.0;
 
+const float MBCoverFlowScrollMinimumDeltaThreshold = 0.4;
+
 #define MBCoverFlowViewContainerMinY (NSMaxY([self.accessoryController.view frame]) - 3*[self itemSize].height/4)
 
 // Perspective parameters
@@ -273,6 +275,23 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	NSInteger clickedIndex = [self indexOfItemAtPoint:mouseLocation];
 	if (clickedIndex != NSNotFound) {
 		self.selectionIndex = clickedIndex;
+	}
+}
+
+- (void)scrollWheel:(NSEvent *)theEvent
+{
+	if (fabs([theEvent deltaY]) > MBCoverFlowScrollMinimumDeltaThreshold) {
+		if ([theEvent deltaY] > 0) {
+			self.selectionIndex -= 1;
+		} else {
+			self.selectionIndex += 1;
+		}
+	} else if (fabs([theEvent deltaX]) > MBCoverFlowScrollMinimumDeltaThreshold) {
+		if ([theEvent deltaX] > 0) {
+			self.selectionIndex -= 1;
+		} else {
+			self.selectionIndex += 1;
+		}
 	}
 }
 
