@@ -8,6 +8,14 @@
 
 #import "MBCoverFlowScroller.h"
 
+// Constants
+static NSColor *MBCoverFlowScrollerOutlineColor, *MBCoverFlowScrollerInactiveOutlineColor, *MBCoverFlowScrollerPressedOutlineColor;
+static NSColor *MBCoverFlowScrollerBackgroundTopColor, *MBCoverFlowScrollerInactiveBackgroundTopColor, *MBCoverFlowScrollerPressedBackgroundTopColor;
+static NSColor *MBCoverFlowScrollerBackgroundBottomColor, *MBCoverFlowScrollerInactiveBackgroundBottomColor, *MBCoverFlowScrollerPressedBackgroundBottomColor;
+static NSColor *MBCoverFlowScrollerGlossTopColor, *MBCoverFlowScrollerInactiveGlossTopColor, *MBCoverFlowScrollerPressedGlossTopColor;
+static NSColor *MBCoverFlowScrollerGlossBottomColor, *MBCoverFlowScrollerInactiveGlossBottomColor, *MBCoverFlowScrollerPressedGlossBottomColor;
+static NSColor *MBCoverFlowScrollerSlotBackgroundColor, *MBCoverFlowScrollerInactiveSlotBackgroundColor, *MBCoverFlowScrollerSlotInsetColor;
+
 @interface MBCoverFlowScroller ()
 - (NSBezierPath *)_leftArrowPath;
 - (NSBezierPath *)_rightArrowPath;
@@ -22,6 +30,28 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 @implementation MBCoverFlowScroller
 
 @synthesize numberOfIncrements=_numberOfIncrements;
+
++ (void)initialize
+{
+	MBCoverFlowScrollerOutlineColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.5] retain];
+	MBCoverFlowScrollerInactiveOutlineColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.3] retain];
+	MBCoverFlowScrollerPressedOutlineColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:1.0] retain];
+	MBCoverFlowScrollerBackgroundTopColor = [[NSColor colorWithCalibratedWhite:0.1 alpha:1.0] retain];
+	MBCoverFlowScrollerInactiveBackgroundTopColor = [[NSColor colorWithCalibratedWhite:0.1 alpha:1.0] retain];
+	MBCoverFlowScrollerPressedBackgroundTopColor = [[NSColor colorWithCalibratedWhite:0.8 alpha:1.0] retain];
+	MBCoverFlowScrollerBackgroundBottomColor = [[NSColor colorWithCalibratedWhite:0.0 alpha:1.0] retain];
+	MBCoverFlowScrollerInactiveBackgroundBottomColor = [[NSColor colorWithCalibratedWhite:0.0 alpha:1.0] retain];
+	MBCoverFlowScrollerPressedBackgroundBottomColor = [[NSColor colorWithCalibratedWhite:0.4 alpha:1.0] retain];
+	MBCoverFlowScrollerGlossTopColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.3] retain];
+	MBCoverFlowScrollerInactiveGlossTopColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.3] retain];
+	MBCoverFlowScrollerPressedGlossTopColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.3] retain];
+	MBCoverFlowScrollerGlossBottomColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.1] retain];
+	MBCoverFlowScrollerInactiveGlossBottomColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.0] retain];
+	MBCoverFlowScrollerPressedGlossBottomColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.1] retain];
+	MBCoverFlowScrollerSlotBackgroundColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.3] retain];
+	MBCoverFlowScrollerInactiveSlotBackgroundColor = [[NSColor colorWithCalibratedWhite:1.0 alpha:0.2] retain];
+	MBCoverFlowScrollerSlotInsetColor = [[NSColor colorWithCalibratedWhite:0.0 alpha:0.2] retain];
+}
 
 - (void)drawRect:(NSRect)rect
 {
@@ -134,15 +164,25 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 		[[NSGraphicsContext currentContext] saveGraphicsState];
 		[arrowPath addClip];
 		
-		// Draw the background
-		NSColor *outlineColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.5];
-		NSColor *bgTop = [NSColor colorWithCalibratedWhite:0.1 alpha:1.0];
-		NSColor *bgBottom = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+		// Determine the proper colors
+		NSColor *outlineColor = MBCoverFlowScrollerOutlineColor;
+		NSColor *bgTop = MBCoverFlowScrollerBackgroundTopColor;
+		NSColor *bgBottom = MBCoverFlowScrollerBackgroundBottomColor;
+		NSColor *glossTop = MBCoverFlowScrollerGlossTopColor;
+		NSColor *glossBottom = MBCoverFlowScrollerGlossBottomColor;
 		
 		if (flag) {
-			outlineColor = [NSColor colorWithCalibratedWhite:1.0 alpha:1.0];
-			bgTop = [NSColor colorWithCalibratedWhite:0.8 alpha:1.0];
-			bgBottom = [NSColor colorWithCalibratedWhite:0.4 alpha:1.0];
+			outlineColor = MBCoverFlowScrollerPressedOutlineColor;
+			bgTop = MBCoverFlowScrollerPressedBackgroundTopColor;
+			bgBottom = MBCoverFlowScrollerPressedBackgroundBottomColor;
+			glossTop = MBCoverFlowScrollerPressedGlossTopColor;
+			glossBottom = MBCoverFlowScrollerPressedGlossBottomColor;
+		} else if (![[self window] isKeyWindow]) {
+			outlineColor = MBCoverFlowScrollerInactiveOutlineColor;
+			bgTop = MBCoverFlowScrollerInactiveBackgroundTopColor;
+			bgBottom = MBCoverFlowScrollerInactiveBackgroundBottomColor;
+			glossTop = MBCoverFlowScrollerInactiveGlossTopColor;
+			glossBottom = MBCoverFlowScrollerInactiveGlossBottomColor;
 		}
 		
 		// Draw the background
@@ -151,8 +191,6 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 		[bgGradient release];
 		
 		// Draw the gloss
-		NSColor *glossTop = [NSColor colorWithCalibratedWhite:1.0 alpha:0.3];
-		NSColor *glossBottom = [NSColor colorWithCalibratedWhite:1.0 alpha:0.1];
 		NSGradient *glossGradient = [[NSGradient alloc] initWithStartingColor:glossTop endingColor:glossBottom];
 		NSRect glossRect = [self rectForPart:NSScrollerDecrementLine];
 		glossRect.origin.x += 4.0;
@@ -188,15 +226,26 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 		[[NSGraphicsContext currentContext] saveGraphicsState];
 		[arrowPath addClip];
 		
-		// Draw the background
-		NSColor *outlineColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.5];
-		NSColor *bgTop = [NSColor colorWithCalibratedWhite:0.1 alpha:1.0];
-		NSColor *bgBottom = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+		// Determine the proper colors
+		NSColor *outlineColor = MBCoverFlowScrollerOutlineColor;
+		NSColor *bgTop = MBCoverFlowScrollerBackgroundTopColor;
+		NSColor *bgBottom = MBCoverFlowScrollerBackgroundBottomColor;
+		NSColor *glossTop = MBCoverFlowScrollerGlossTopColor;
+		NSColor *glossBottom = MBCoverFlowScrollerGlossBottomColor;
+		
 		if (flag) {
-			outlineColor = [NSColor colorWithCalibratedWhite:1.0 alpha:1.0];
-			bgTop = [NSColor colorWithCalibratedWhite:0.8 alpha:1.0];
-			bgBottom = [NSColor colorWithCalibratedWhite:0.4 alpha:1.0];
-		} 
+			outlineColor = MBCoverFlowScrollerPressedOutlineColor;
+			bgTop = MBCoverFlowScrollerPressedBackgroundTopColor;
+			bgBottom = MBCoverFlowScrollerPressedBackgroundBottomColor;
+			glossTop = MBCoverFlowScrollerPressedGlossTopColor;
+			glossBottom = MBCoverFlowScrollerPressedGlossBottomColor;
+		} else if (![[self window] isKeyWindow]) {
+			outlineColor = MBCoverFlowScrollerInactiveOutlineColor;
+			bgTop = MBCoverFlowScrollerInactiveBackgroundTopColor;
+			bgBottom = MBCoverFlowScrollerInactiveBackgroundBottomColor;
+			glossTop = MBCoverFlowScrollerInactiveGlossTopColor;
+			glossBottom = MBCoverFlowScrollerInactiveGlossBottomColor;
+		}
 		
 		// Draw the background
 		NSGradient *bgGradient = [[NSGradient alloc] initWithStartingColor:bgTop endingColor:bgBottom];
@@ -204,8 +253,6 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 		[bgGradient release];
 		
 		// Draw the gloss
-		NSColor *glossTop = [NSColor colorWithCalibratedWhite:1.0 alpha:0.3];
-		NSColor *glossBottom = [NSColor colorWithCalibratedWhite:1.0 alpha:0.1];
 		NSGradient *glossGradient = [[NSGradient alloc] initWithStartingColor:glossTop endingColor:glossBottom];
 		NSRect glossRect = [self rectForPart:NSScrollerIncrementLine];
 		glossRect.origin.x -= 24.0;
@@ -241,8 +288,14 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 - (void)drawKnobSlotInRect:(NSRect)slotRect highlight:(BOOL)flag
 {
 	NSBezierPath *slotPath = [NSBezierPath bezierPathWithRect:NSInsetRect(slotRect, 0.5, 0.5)];
-	NSColor *bgColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.3];
-	NSColor *outlineColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.5];
+	
+	// Determine the proper colors
+	NSColor *bgColor = MBCoverFlowScrollerSlotBackgroundColor;
+	NSColor *outlineColor = MBCoverFlowScrollerOutlineColor;
+	if (![[self window] isKeyWindow]) {
+		bgColor = MBCoverFlowScrollerInactiveSlotBackgroundColor;
+		outlineColor = MBCoverFlowScrollerInactiveOutlineColor;
+	}
 	
 	[bgColor set];
 	[slotPath fill];
@@ -251,7 +304,7 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 	[slotPath stroke];
 	
 	NSRect insetRect = NSMakeRect(slotRect.origin.x, slotRect.origin.y+1.0, slotRect.size.width, 1.0);
-	[[NSColor colorWithCalibratedWhite:0.0 alpha:0.2] set];
+	[MBCoverFlowScrollerSlotInsetColor set];
 	[NSBezierPath fillRect:insetRect];
 }
 
@@ -275,10 +328,20 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 	[[NSGraphicsContext currentContext] saveGraphicsState];
 	[knobPath addClip];
 	
-	// Draw the background
-	NSColor *outlineColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.5];
-	NSColor *bgTop = [NSColor colorWithCalibratedWhite:0.1 alpha:1.0];
-	NSColor *bgBottom = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+	// Determine the proper colors
+	NSColor *outlineColor = MBCoverFlowScrollerOutlineColor;
+	NSColor *bgTop = MBCoverFlowScrollerBackgroundTopColor;
+	NSColor *bgBottom = MBCoverFlowScrollerBackgroundBottomColor;
+	NSColor *glossTop = MBCoverFlowScrollerGlossTopColor;
+	NSColor *glossBottom = MBCoverFlowScrollerGlossBottomColor;
+	
+	if (![[self window] isKeyWindow]) {
+		outlineColor = MBCoverFlowScrollerInactiveOutlineColor;
+		bgTop = MBCoverFlowScrollerInactiveBackgroundTopColor;
+		bgBottom = MBCoverFlowScrollerInactiveBackgroundBottomColor;
+		glossTop = MBCoverFlowScrollerInactiveGlossTopColor;
+		glossBottom = MBCoverFlowScrollerInactiveGlossBottomColor;
+	}
 	
 	// Draw the background
 	NSGradient *bgGradient = [[NSGradient alloc] initWithStartingColor:bgTop endingColor:bgBottom];
@@ -286,8 +349,6 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 20.0;
 	[bgGradient release];
 	
 	// Draw the gloss
-	NSColor *glossTop = [NSColor colorWithCalibratedWhite:1.0 alpha:0.3];
-	NSColor *glossBottom = [NSColor colorWithCalibratedWhite:1.0 alpha:0.1];
 	NSGradient *glossGradient = [[NSGradient alloc] initWithStartingColor:glossTop endingColor:glossBottom];
 	NSRect glossRect = [self rectForPart:NSScrollerKnob];
 	glossRect.origin.x += 4.0;
