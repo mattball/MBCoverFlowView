@@ -50,6 +50,7 @@
 	MBCoverFlowScroller *_scroller;
 	
 	BOOL _showsScrollbar;
+	BOOL _autoresizesItems;
 }
 
 /**
@@ -64,6 +65,12 @@
 /**
  * @name        Setting Display Attributes
  */
+
+/**
+ * @brief       Whether or not the receiver should resize items to fit
+ *              the available vertical space. Defaults to \c YES.
+ */
+@property (nonatomic, assign) BOOL autoresizesItems;
 
 /**
  * @brief       The size of the flow items.

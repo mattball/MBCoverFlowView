@@ -68,7 +68,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 @implementation MBCoverFlowView
 
 @synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
-            itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar;
+            itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar,
+            autoresizesItems=_autoresizesItems;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -76,7 +77,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (id)initWithFrame:(NSRect)frameRect
 {
 	if (self = [super initWithFrame:frameRect]) {
-		//_imageOrigin = MBCoverFlowViewBottomMargin;
+		_autoresizesItems = YES;
 		
 		[self setAutoresizesSubviews:YES];
 		
@@ -365,8 +366,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 #pragma mark Setting Display Attributes
 
+- (void)setAutoresizesItems:(BOOL)flag
+{
+	_autoresizesItems = flag;
+	[self resizeSubviewsWithOldSize:[self frame].size];
+}
+
 - (NSSize)itemSize
 {
+	if (!self.autoresizesItems) {
+		return _itemSize;
+	}
+	
 	float origin = MBCoverFlowViewBottomMargin;
 	
 	if (self.showsScrollbar) {
@@ -381,6 +392,11 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	NSSize size;
 	size.height = ([self frame].size.height - origin) - [self frame].size.height/3;
 	size.width = 1.4*size.height;
+	
+	// Make sure it's integral
+	size.height = floor(size.height);
+	size.width = floor(size.width);
+	
 	return size;
 }
 
