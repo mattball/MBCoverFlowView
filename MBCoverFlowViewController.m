@@ -66,6 +66,8 @@
 	[label release];
 	[(MBCoverFlowView *)self.view setAccessoryController:labelViewController];
 	[labelViewController release];
+	
+	[(MBCoverFlowView *)self.view setShowsScrollbar:YES];
 }
 
 @end

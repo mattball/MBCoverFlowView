@@ -32,23 +32,20 @@
 #import <QuartzCore/QuartzCore.h>
 
 // Constants
-const float MBCoverFlowViewHorizontalMargin = 12.0;
-
-// Layer Dimensions
 const float MBCoverFlowViewCellSpacing = 14.0;
-
-const float MBCoverFlowViewDefaultItemWidth = 140.0;
-const float MBCoverFlowViewDefaultItemHeight = 100.0;
 
 const float MBCoverFlowViewTopMargin = 30.0;
 const float MBCoverFlowViewBottomMargin = 20.0;
+const float MBCoverFlowViewHorizontalMargin = 12.0;
+#define MBCoverFlowViewContainerMinY (NSMaxY([self.accessoryController.view frame]) - 3*[self itemSize].height/4)
 
 const float MBCoverFlowScrollerHorizontalMargin = 80.0;
 const float MBCoverFlowScrollerVerticalSpacing = 16.0;
 
-const float MBCoverFlowScrollMinimumDeltaThreshold = 0.4;
+const float MBCoverFlowViewDefaultItemWidth = 140.0;
+const float MBCoverFlowViewDefaultItemHeight = 100.0;
 
-#define MBCoverFlowViewContainerMinY (NSMaxY([self.accessoryController.view frame]) - 3*[self itemSize].height/4)
+const float MBCoverFlowScrollMinimumDeltaThreshold = 0.4;
 
 // Perspective parameters
 const float MBCoverFlowViewPerspectiveCenterPosition = 100.0;
@@ -71,7 +68,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 @implementation MBCoverFlowView
 
 @synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
-            itemSize=_itemSize, content=_content;
+            itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -79,12 +76,15 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (id)initWithFrame:(NSRect)frameRect
 {
 	if (self = [super initWithFrame:frameRect]) {
+		//_imageOrigin = MBCoverFlowViewBottomMargin;
+		
 		[self setAutoresizesSubviews:YES];
 		
 		// Create the scroller
 		_scroller = [[MBCoverFlowScroller alloc] initWithFrame:NSMakeRect(10, 10, 400, 16)];
 		[_scroller setEnabled:YES];
 		[_scroller setTarget:self];
+		[_scroller setHidden:YES];
 		[_scroller setAction:@selector(_scrollerChange:)];
 		[self addSubview:_scroller];
 		
@@ -93,7 +93,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 		_itemSize = NSMakeSize(MBCoverFlowViewDefaultItemWidth, MBCoverFlowViewDefaultItemHeight);
 	
-		
 		CALayer *rootLayer = [CALayer layer];
 		rootLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
 		rootLayer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
@@ -304,17 +303,22 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)resizeSubviewsWithOldSize:(NSSize)oldSize
 {
+	float accessoryY = MBCoverFlowScrollerVerticalSpacing;
+	
 	// Reposition the scroller
-	NSRect scrollerFrame = [_scroller frame];
-	scrollerFrame.size.width = [self frame].size.width - 2*MBCoverFlowScrollerHorizontalMargin;
-	scrollerFrame.origin.x = ([self frame].size.width - scrollerFrame.size.width)/2;
-	scrollerFrame.origin.y = MBCoverFlowViewBottomMargin;
-	[_scroller setFrame:scrollerFrame];
+	if (self.showsScrollbar) {
+		NSRect scrollerFrame = [_scroller frame];
+		scrollerFrame.size.width = [self frame].size.width - 2*MBCoverFlowScrollerHorizontalMargin;
+		scrollerFrame.origin.x = ([self frame].size.width - scrollerFrame.size.width)/2;
+		scrollerFrame.origin.y = MBCoverFlowViewBottomMargin;
+		[_scroller setFrame:scrollerFrame];
+		accessoryY += NSMaxY([_scroller frame]);
+	}
 	
 	if (self.accessoryController.view) {
 		NSRect accessoryFrame = [self.accessoryController.view frame];
 		accessoryFrame.origin.x = floor(([self frame].size.width - accessoryFrame.size.width)/2);
-		accessoryFrame.origin.y = NSMaxY([_scroller frame]) + MBCoverFlowScrollerVerticalSpacing;
+		accessoryFrame.origin.y = accessoryY;
 		[self.accessoryController.view setFrame:accessoryFrame];
 	}
 	
@@ -323,6 +327,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintWidth relativeTo:@"superlayer" attribute:kCAConstraintWidth offset:-20]];
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
+
+	self.selectionIndex = self.selectionIndex;
 }
 
 #pragma mark -
@@ -358,6 +364,25 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 }
 
 #pragma mark Setting Display Attributes
+
+- (NSSize)itemSize
+{
+	float origin = MBCoverFlowViewBottomMargin;
+	
+	if (self.showsScrollbar) {
+		origin += [_scroller frame].size.height + MBCoverFlowScrollerVerticalSpacing;
+	}
+	
+	if (self.accessoryController.view) {
+		NSRect accessoryFrame = [self.accessoryController.view frame];
+		origin += accessoryFrame.size.height;
+	}
+	
+	NSSize size;
+	size.height = ([self frame].size.height - origin) - [self frame].size.height/3;
+	size.width = 1.4*size.height;
+	return size;
+}
 
 - (void)setItemSize:(NSSize)newSize
 {
@@ -400,6 +425,13 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 }
 
+- (void)setShowsScrollbar:(BOOL)flag
+{
+	_showsScrollbar = flag;
+	[_scroller setHidden:!flag];
+	[self resizeSubviewsWithOldSize:[self frame].size];
+}
+
 #pragma mark Managing the Selection
 
 - (void)setSelectionIndex:(NSInteger)newIndex
@@ -409,9 +441,9 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	
 	if ([[NSApp currentEvent] modifierFlags] & (NSAlphaShiftKeyMask|NSShiftKeyMask))
-		[CATransaction setValue:[NSNumber numberWithFloat:2.0f] forKey:@"animationDuration"];
+		[CATransaction setValue:[NSNumber numberWithFloat:2.1f] forKey:@"animationDuration"];
 	else
-		[CATransaction setValue:[NSNumber numberWithFloat:1.1f] forKey:@"animationDuration"];
+		[CATransaction setValue:[NSNumber numberWithFloat:0.7f] forKey:@"animationDuration"];
 	
 	_selectionIndex = newIndex;
 	[_scrollLayer layoutIfNeeded];

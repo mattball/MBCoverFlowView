@@ -48,6 +48,8 @@
 	NSViewController *_accessoryController;
 	
 	MBCoverFlowScroller *_scroller;
+	
+	BOOL _showsScrollbar;
 }
 
 /**
@@ -67,6 +69,12 @@
  * @brief       The size of the flow items.
  */
 @property (nonatomic, assign) NSSize itemSize;
+
+/**
+ * @brief       Whether or not the receiver should display a scrollbar at
+ *              the bottom of the view.
+ */
+@property (nonatomic, assign) BOOL showsScrollbar;
 
 /**
  * @brief       The controller which manages the receiver's accessory view.
