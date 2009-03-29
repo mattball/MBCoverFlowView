@@ -73,10 +73,15 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 30.0;
 
 - (void)drawRect:(NSRect)rect
 {
+	// Don't draw the scroller if it can't be scrolled
+	if ([self knobProportion] >= 1.0) {
+		return;
+	}
+	
 	[self drawKnobSlotInRect:[self rectForPart:NSScrollerKnobSlot] highlight:NO] ;
 	[self drawArrow:NSScrollerIncrementArrow highlight:( [self hitPart] == NSScrollerIncrementLine )] ;
 	[self drawArrow:NSScrollerDecrementArrow highlight:( [self hitPart] == NSScrollerDecrementLine )] ;
-	[self drawKnob] ;
+	[self drawKnob];
 }
 
 - (NSScrollerPart)testPart:(NSPoint)aPoint

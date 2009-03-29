@@ -92,6 +92,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		[_scroller setEnabled:YES];
 		[_scroller setTarget:self];
 		[_scroller setHidden:YES];
+		[_scroller setKnobProportion:1.0];
 		[_scroller setAction:@selector(_scrollerChange:)];
 		[self addSubview:_scroller];
 		
@@ -384,7 +385,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 	[oldContent release];
 	
-	[_scroller setNumberOfIncrements:([self.content count]-1)];
+	[_scroller setNumberOfIncrements:fmax([self.content count]-1, 0)];
 	self.selectionIndex = self.selectionIndex;
 }
 
