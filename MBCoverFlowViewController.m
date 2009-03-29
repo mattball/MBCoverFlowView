@@ -49,9 +49,11 @@
 		count++;
 	}
 	
-	[(MBCoverFlowView *)self.view setContent:images];
+	items = [images copy];
 	
-	NSViewController *labelViewController = [[NSViewController alloc] initWithNibName:nil bundle:nil];
+//	[(MBCoverFlowView *)self.view setContent:images];
+	
+/*	NSViewController *labelViewController = [[NSViewController alloc] initWithNibName:nil bundle:nil];
 	NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];
 	[label setBordered:NO];
 	[label setBezeled:NO];
@@ -65,9 +67,21 @@
 	[labelViewController setView:label];
 	[label release];
 	[(MBCoverFlowView *)self.view setAccessoryController:labelViewController];
-	[labelViewController release];
+	[labelViewController release];*/
 	
 	[(MBCoverFlowView *)self.view setShowsScrollbar:YES];
+}
+
+- (void)dealloc
+{
+	[items release];
+	[super dealloc];
+}
+
+- (void)addItem:(id)sender
+{
+	NSArray *content = [items subarrayWithRange:NSMakeRange(0, [[(MBCoverFlowView *)self.view content] count]+1)];
+	[(MBCoverFlowView *)self.view setContent:content];
 }
 
 @end

@@ -62,7 +62,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (float)_positionOfSelectedItem;
 - (CALayer *)_newLayer;
 - (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
-- (void)_refreshImagesWithOldContent:(NSArray *)oldContent;
+- (void)_refreshLayers;
+- (CALayer *)_layerForObject:(id)object;
 @end
 
 
@@ -341,7 +342,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 #pragma mark Loading Data
 
 - (void)setContent:(NSArray *)newContents
-{
+{	
 	NSArray *oldContent = [self.content retain];
 	
 	if (_content) {
@@ -353,8 +354,30 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		_content = [newContents copy];
 	}
 	
-	[self _refreshImagesWithOldContent:oldContent];
+	// Add any new items
+	NSMutableArray *itemsToAdd = [NSMutableArray arrayWithArray:self.content];
+	[itemsToAdd removeObjectsInArray:oldContent];
+	
+	for (NSObject *object in itemsToAdd) {
+		CALayer *layer = [self _newLayer];
+		[layer setValue:object forKey:@"representedObject"];
+	}
+	
+	// Remove any items which are no longer present
+	NSMutableArray *itemsToRemove = [NSMutableArray arrayWithArray:oldContent];
+	[itemsToRemove removeObjectsInArray:self.content];
+	for (NSObject *object in itemsToRemove) {
+		CALayer *layer = [self _layerForObject:object];
+		[layer removeFromSuperlayer];
+	}
+	
 	[oldContent release];
+	
+	// Update the images and indexes
+	[self _refreshLayers];
+	
+	[_scroller setNumberOfIncrements:([self.content count]-1)];
+	self.selectionIndex = self.selectionIndex;
 }
 
 #pragma mark Setting Display Attributes
@@ -601,12 +624,16 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 }
 
-- (void)_refreshImagesWithOldContent:(NSArray *)oldContent
+- (void)_refreshLayers
 {	
-	for (NSObject *object in self.content) {
-		CALayer *layer = [self _newLayer];
+	for (CALayer *layer in [_scrollLayer sublayers]) {
 		CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
 		CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
+		
+		NSObject *object = [layer valueForKey:@"representedObject"];
+		NSInteger index = [self.content indexOfObject:object];
+		
+		[layer setValue:[NSNumber numberWithInteger:index] forKey:@"index"];
 		
 		@try {
 			NSImage *image;
@@ -628,9 +655,16 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 			continue;
 		}
 	}
-	
-	[_scroller setNumberOfIncrements:([self.content count]-1)];
-	self.selectionIndex = self.selectionIndex;
+}
+
+- (CALayer *)_layerForObject:(id)object
+{
+	for (CALayer *layer in [_scrollLayer sublayers]) {
+		if ([object isEqual:[layer valueForKey:@"representedObject"]]) {
+			return layer;
+		}
+	}
+	return nil;
 }
 
 #pragma mark -
