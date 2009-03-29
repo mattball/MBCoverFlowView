@@ -389,6 +389,23 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	self.selectionIndex = self.selectionIndex;
 }
 
+- (void)setImageKeyPath:(NSString *)keyPath
+{
+	if (_imageKeyPath) {
+		[_imageKeyPath release];
+		_imageKeyPath = nil;
+	}
+	
+	if (keyPath) {
+		_imageKeyPath = [keyPath copy];
+	}
+	
+	// Refresh all the layers with images at the new key path
+	for (CALayer *layer in [_scrollLayer sublayers]) {
+		[self _refreshLayer:layer];
+	}
+}
+
 #pragma mark Setting Display Attributes
 
 - (void)setAutoresizesItems:(BOOL)flag
