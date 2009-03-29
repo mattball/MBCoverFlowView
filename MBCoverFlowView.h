@@ -53,6 +53,8 @@
 	BOOL _autoresizesItems;
 	
 	NSString *_imageKeyPath;
+	
+	NSOperationQueue *_imageLoadQueue;
 }
 
 /**

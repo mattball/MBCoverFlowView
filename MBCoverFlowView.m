@@ -26,6 +26,7 @@
 
 #import "MBCoverFlowView.h"
 
+#import "MBCoverFlowImageLoadOperation.h"
 #import "MBCoverFlowScroller.h"
 #import "NSImage+MBCoverFlowAdditions.h"
 
@@ -62,7 +63,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (float)_positionOfSelectedItem;
 - (CALayer *)_newLayer;
 - (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
-- (void)_refreshLayers;
+- (void)_refreshLayer:(CALayer *)layer;
 - (CALayer *)_layerForObject:(id)object;
 @end
 
@@ -79,6 +80,9 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (id)initWithFrame:(NSRect)frameRect
 {
 	if (self = [super initWithFrame:frameRect]) {
+		_imageLoadQueue = [[NSOperationQueue alloc] init];
+		[_imageLoadQueue setMaxConcurrentOperationCount:1];
+		
 		_autoresizesItems = YES;
 		
 		[self setAutoresizesSubviews:YES];
@@ -240,6 +244,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	self.content = nil;
 	self.imageKeyPath = nil;
 	CGImageRelease(_shadowImage);
+	[_imageLoadQueue release];
+	_imageLoadQueue = nil;
 	[super dealloc];
 }
 
@@ -343,6 +349,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)setContent:(NSArray *)newContents
 {	
+	if ([newContents isEqualToArray:self.content]) {
+		return;
+	}
+	
 	NSArray *oldContent = [self.content retain];
 	
 	if (_content) {
@@ -361,6 +371,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	for (NSObject *object in itemsToAdd) {
 		CALayer *layer = [self _newLayer];
 		[layer setValue:object forKey:@"representedObject"];
+		[self _refreshLayer:layer];
 	}
 	
 	// Remove any items which are no longer present
@@ -372,9 +383,6 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	
 	[oldContent release];
-	
-	// Update the images and indexes
-	[self _refreshLayers];
 	
 	[_scroller setNumberOfIncrements:([self.content count]-1)];
 	self.selectionIndex = self.selectionIndex;
@@ -624,37 +632,17 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 }
 
-- (void)_refreshLayers
-{	
-	for (CALayer *layer in [_scrollLayer sublayers]) {
-		CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
-		CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
-		
-		NSObject *object = [layer valueForKey:@"representedObject"];
-		NSInteger index = [self.content indexOfObject:object];
-		
-		[layer setValue:[NSNumber numberWithInteger:index] forKey:@"index"];
-		
-		@try {
-			NSImage *image;
-			
-			if (self.imageKeyPath != nil) {
-				image = [object valueForKeyPath:self.imageKeyPath];
-			} else if ([object isKindOfClass:[NSImage class]]) {
-				image = (NSImage *)object;
-			}
-		
-			CGImageRef imageRef = [image imageRef];
-			
-			imageLayer.contents = (id)imageRef;
-			reflectionLayer.contents = (id)imageRef;
-			imageLayer.backgroundColor = NULL;
-			reflectionLayer.backgroundColor = NULL;
-		} @catch (NSException *e) {
-			// If the key path isn't valid, move to the next item
-			continue;
-		}
-	}
+- (void)_refreshLayer:(CALayer *)layer
+{		
+	NSObject *object = [layer valueForKey:@"representedObject"];
+	NSInteger index = [self.content indexOfObject:object];
+	
+	[layer setValue:[NSNumber numberWithInteger:index] forKey:@"index"];
+	
+	// Create the operation
+	NSOperation *operation = [[MBCoverFlowImageLoadOperation alloc] initWithLayer:layer imageKeyPath:self.imageKeyPath];
+	[_imageLoadQueue addOperation:operation];
+	[operation release];
 }
 
 - (CALayer *)_layerForObject:(id)object

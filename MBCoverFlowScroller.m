@@ -153,6 +153,7 @@ const float MBCoverFlowScrollerKnobMinimumWidth = 30.0;
 	} else {
 		[self setKnobProportion:1.0];
 	}
+	[self setNeedsDisplay:YES];
 }
 
 /* The documentation for NSScroller says to use -drawArrow:highlight:, but
