@@ -27,6 +27,8 @@
 #import <Cocoa/Cocoa.h>
 
 /**
+ * @class       MBCoverFlowScroller
+ *
  * @brief       A scroller which has an appearance appropriate for a
  *              CoverFlow-style environment.
  */

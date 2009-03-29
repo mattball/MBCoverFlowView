@@ -59,16 +59,16 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				C9D173580F6B38CD0097827F /* MBCoverFlowView.h */,
-				C9D173590F6B38CD0097827F /* MBCoverFlowView.m */,
 				C9D178210F6F97D60097827F /* MBCoverFlowViewController.h */,
 				C9D178220F6F97D60097827F /* MBCoverFlowViewController.m */,
-				C9E9ACB40F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.h */,
-				C9E9ACB50F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m */,
+				C9D173580F6B38CD0097827F /* MBCoverFlowView.h */,
+				C9D173590F6B38CD0097827F /* MBCoverFlowView.m */,
 				C91E73FA0F79F75C00FD319E /* MBCoverFlowScroller.h */,
 				C91E73FB0F79F75C00FD319E /* MBCoverFlowScroller.m */,
 				C91E7EE50F7F442F00FD319E /* MBCoverFlowImageLoadOperation.h */,
 				C91E7EE60F7F442F00FD319E /* MBCoverFlowImageLoadOperation.m */,
+				C9E9ACB40F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.h */,
+				C9E9ACB50F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";

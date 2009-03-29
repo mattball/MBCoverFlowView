@@ -29,6 +29,12 @@
 
 @class MBCoverFlowScroller;
 
+/**
+ * @class       MBCoverFlowView
+ *
+ * @brief       An NSView subclass which displays a collection of
+ *              items using the Cover Flow style.
+ */
 @interface MBCoverFlowView : NSView {
 	NSInteger _selectionIndex;
 	

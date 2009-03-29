@@ -26,7 +26,11 @@
 
 #import <Cocoa/Cocoa.h>
 
-
+/**
+ * @category    NSImage(MBCoverFlowAdditions)
+ *
+ * @brief       Additions to NSImage which are used by MBCoverFlowView.
+ */
 @interface NSImage (MBCoverFlowAdditions)
 
 /**
