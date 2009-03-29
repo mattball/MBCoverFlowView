@@ -51,6 +51,8 @@
 	
 	BOOL _showsScrollbar;
 	BOOL _autoresizesItems;
+	
+	NSString *_imageKeyPath;
 }
 
 /**
@@ -61,6 +63,12 @@
  * @brief       The receiver's content object.
  */
 @property (nonatomic, copy) NSArray *content;
+
+/**
+ * @brief       The key path which returns the image for an item
+ *              in the receiver's \c content array.
+ */
+@property (nonatomic, copy) NSString *imageKeyPath;
 
 /**
  * @name        Setting Display Attributes

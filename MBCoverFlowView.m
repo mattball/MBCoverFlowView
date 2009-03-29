@@ -62,6 +62,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (float)_positionOfSelectedItem;
 - (CALayer *)_newLayer;
 - (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
+- (void)_refreshImagesWithOldContent:(NSArray *)oldContent;
 @end
 
 
@@ -69,7 +70,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 @synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
             itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar,
-            autoresizesItems=_autoresizesItems;
+            autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -235,6 +236,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[_scrollLayer release];
 	[_containerLayer release];
 	self.accessoryController = nil;
+	self.content = nil;
+	self.imageKeyPath = nil;
 	CGImageRelease(_shadowImage);
 	[super dealloc];
 }
@@ -339,6 +342,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)setContent:(NSArray *)newContents
 {
+	NSArray *oldContent = [self.content retain];
+	
 	if (_content) {
 		[_content release];
 		_content = nil;
@@ -346,22 +351,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 	if (newContents != nil) {
 		_content = [newContents copy];
-		for (NSImage *image in self.content) {
-			CALayer *layer = [self _newLayer];
-			CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
-			CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
-			
-			CGImageRef imageRef = [image imageRef];
-			
-			imageLayer.contents = (id)imageRef;
-			reflectionLayer.contents = (id)imageRef;
-			imageLayer.backgroundColor = NULL;
-			reflectionLayer.backgroundColor = NULL;
-		}
 	}
 	
-	[_scroller setNumberOfIncrements:([self.content count]-1)];
-	self.selectionIndex = self.selectionIndex;
+	[self _refreshImagesWithOldContent:oldContent];
+	[oldContent release];
 }
 
 #pragma mark Setting Display Attributes
@@ -606,6 +599,38 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	} else if (clickedPart == NSScrollerKnob) {
 		self.selectionIndex = [sender integerValue];
 	}
+}
+
+- (void)_refreshImagesWithOldContent:(NSArray *)oldContent
+{	
+	for (NSObject *object in self.content) {
+		CALayer *layer = [self _newLayer];
+		CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
+		CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
+		
+		@try {
+			NSImage *image;
+			
+			if (self.imageKeyPath != nil) {
+				image = [object valueForKeyPath:self.imageKeyPath];
+			} else if ([object isKindOfClass:[NSImage class]]) {
+				image = (NSImage *)object;
+			}
+		
+			CGImageRef imageRef = [image imageRef];
+			
+			imageLayer.contents = (id)imageRef;
+			reflectionLayer.contents = (id)imageRef;
+			imageLayer.backgroundColor = NULL;
+			reflectionLayer.backgroundColor = NULL;
+		} @catch (NSException *e) {
+			// If the key path isn't valid, move to the next item
+			continue;
+		}
+	}
+	
+	[_scroller setNumberOfIncrements:([self.content count]-1)];
+	self.selectionIndex = self.selectionIndex;
 }
 
 #pragma mark -
