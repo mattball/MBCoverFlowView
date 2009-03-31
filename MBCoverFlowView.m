@@ -32,7 +32,9 @@
 #import <QuartzCore/QuartzCore.h>
 
 // Constants
-const float MBCoverFlowViewCellSpacing = 14.0;
+//const float MBCoverFlowViewCellSpacing = 14.0;
+#define MBCoverFlowViewCellSpacing ([self itemSize].width/10)
+
 const float MBCoverFlowViewPlaceholderHeight = 600;
 
 const float MBCoverFlowViewTopMargin = 30.0;
@@ -443,7 +445,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 	NSSize size;
 	size.height = ([self frame].size.height - origin) - [self frame].size.height/3;
-	size.width = 1.4*size.height;
+	size.width = size.height * _itemSize.width / _itemSize.height;
 	
 	// Make sure it's integral
 	size.height = floor(size.height);

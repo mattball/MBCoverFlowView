@@ -84,12 +84,13 @@
 
 - (void)addItem:(id)sender
 {
-	if ([items isEqualToArray:[(MBCoverFlowView *)self.view content]]) {
+	/*if ([items isEqualToArray:[(MBCoverFlowView *)self.view content]]) {
 		return;
 	}
 	
 	NSArray *content = [items subarrayWithRange:NSMakeRange(0, [[(MBCoverFlowView *)self.view content] count]+1)];
-	[(MBCoverFlowView *)self.view setContent:content];
+	[(MBCoverFlowView *)self.view setContent:content];*/
+	[(MBCoverFlowView *)self.view setContent:items];
 }
 
 @end

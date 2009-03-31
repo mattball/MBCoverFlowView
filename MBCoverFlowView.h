@@ -38,32 +38,31 @@
 @interface MBCoverFlowView : NSView {
 	NSInteger _selectedIndex;
 	
+	// Layers
 	CAScrollLayer *_scrollLayer;
 	CALayer *_containerLayer;
 	CALayer *_leftGradientLayer;
 	CALayer *_rightGradientLayer;
 	CALayer *_bottomGradientLayer;
 	
+	// Appearance
 	CGImageRef _shadowImage;
 	CATransform3D _leftTransform;
 	CATransform3D _rightTransform;
 	
+	// Display Attributes
 	NSSize _itemSize;
-	NSArray *_content;
-	
 	NSViewController *_accessoryController;
-	
 	MBCoverFlowScroller *_scroller;
-	
 	BOOL _showsScrollbar;
 	BOOL _autoresizesItems;
-	
-	NSString *_imageKeyPath;
-	
-	NSOperationQueue *_imageLoadQueue;
-	
 	CGImageRef _placeholderRef;
 	NSImage *_placeholderIcon;
+	
+	// Data
+	NSArray *_content;
+	NSString *_imageKeyPath;
+	NSOperationQueue *_imageLoadQueue;
 }
 
 /**
