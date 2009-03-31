@@ -62,7 +62,7 @@
 	
 	NSOperationQueue *_imageLoadQueue;
 	
-	NSImage *_placeholder;
+	CGImageRef _placeholderRef;
 	NSImage *_placeholderIcon;
 }
 
@@ -73,7 +73,7 @@
 /**
  * @brief       The receiver's content object.
  */
-@property (nonatomic, copy) NSArray *content;
+@property (nonatomic, retain) NSArray *content;
 
 /**
  * @brief       The key path which returns the image for an item

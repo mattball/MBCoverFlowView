@@ -244,11 +244,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 }
 
 - (void)dealloc
-{
-	if (_placeholder) {
-		[_placeholder release];
-	}
-	
+{	
 	[_scroller release];
 	[_scrollLayer release];
 	[_containerLayer release];
@@ -256,6 +252,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	self.content = nil;
 	self.imageKeyPath = nil;
 	self.placeholderIcon = nil;
+	CGImageRelease(_placeholderRef);
 	CGImageRelease(_shadowImage);
 	[_imageLoadQueue release];
 	_imageLoadQueue = nil;
@@ -375,11 +372,11 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	
 	if (newContents != nil) {
-		_content = [newContents copy];
+		_content = [newContents retain];
 	}
 	
 	// Add any new items
-	NSMutableArray *itemsToAdd = [NSMutableArray arrayWithArray:self.content];
+	NSMutableArray *itemsToAdd = [self.content mutableCopy];
 	[itemsToAdd removeObjectsInArray:oldContent];
 	
 	for (NSObject *object in itemsToAdd) {
@@ -389,7 +386,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	
 	// Remove any items which are no longer present
-	NSMutableArray *itemsToRemove = [NSMutableArray arrayWithArray:oldContent];
+	NSMutableArray *itemsToRemove = [oldContent mutableCopy];
 	[itemsToRemove removeObjectsInArray:self.content];
 	for (NSObject *object in itemsToRemove) {
 		CALayer *layer = [self _layerForObject:object];
@@ -631,7 +628,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	frame.size = NSSizeToCGSize([self itemSize]);
 	
 	[imageLayer setBounds:frame];
-	imageLayer.contents = (id)[_placeholder imageRef];
+	imageLayer.contents = (id)_placeholderRef;
 	imageLayer.name = @"image";
 	
 	[layer setBounds:frame];
@@ -645,7 +642,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[reflectionLayer setFrame:frame];
 	reflectionLayer.name = @"reflection";
 	reflectionLayer.transform = CATransform3DMakeScale(1, -1, 1);
-	reflectionLayer.contents = (id)[_placeholder imageRef];
+	reflectionLayer.contents = (id)_placeholderRef;
 	[imageLayer addSublayer:reflectionLayer];
 	
 	CALayer *gradientLayer = [CALayer layer];
@@ -707,14 +704,15 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 			image = (NSImage *)object;
 		}
 		
+		CGImageRef imageRef;
+		
 		if (!image) {
-			image = _placeholder;
+			imageRef = CGImageRetain(_placeholderRef);
 			[layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
 		} else {
+			imageRef = [image imageRef];
 			[layer setValue:[NSNumber numberWithBool:YES] forKey:@"hasImage"];
 		}
-		
-		CGImageRef imageRef = [image imageRef];
 		
 		CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
 		CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
@@ -723,6 +721,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		reflectionLayer.contents = (id)imageRef;
 		imageLayer.backgroundColor = NULL;
 		reflectionLayer.backgroundColor = NULL;
+		CGImageRelease(imageRef);
 	} @catch (NSException *e) {
 		// If the key path isn't valid, do nothing
 	}
@@ -739,19 +738,16 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 }
 
 - (void)_recachePlaceholder
-{
-	if (_placeholder) {
-		[_placeholder release];
-		_placeholder = nil;
-	}
+{	
+	CGImageRelease(_placeholderRef);
 	
 	NSSize itemSize = self.itemSize;
 	NSSize placeholderSize;
 	placeholderSize.height = MBCoverFlowViewPlaceholderHeight;
 	placeholderSize.width = itemSize.width * placeholderSize.height/itemSize.height;
 	
-	_placeholder = [[NSImage alloc] initWithSize:placeholderSize];
-	[_placeholder lockFocus];
+	NSImage *placeholder = [[NSImage alloc] initWithSize:placeholderSize];
+	[placeholder lockFocus];
 	NSColor *topColor = [NSColor colorWithCalibratedWhite:0.15 alpha:1.0];
 	NSColor *bottomColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
 	NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:topColor endingColor:bottomColor];
@@ -795,16 +791,17 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		[icon release];		
 	}
 	
-	[_placeholder unlockFocus];
+	[placeholder unlockFocus];
+	
+	_placeholderRef = [placeholder imageRef];
 	
 	// Update the placeholder for all necessary items
 	for (CALayer *layer in [_scrollLayer sublayers]) {
 		if (![[layer valueForKey:@"hasImage"] boolValue]) {
 			CALayer *imageLayer = [[self.layer sublayers] objectAtIndex:0];
 			CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
-			CGImageRef placeholderRef = [_placeholder imageRef];
-			imageLayer.contents = (id)placeholderRef;
-			reflectionLayer.contents = (id)placeholderRef;
+			imageLayer.contents = (id)_placeholderRef;
+			reflectionLayer.contents = (id)_placeholderRef;
 			NSLog(@"test");
 		}
 	}
