@@ -61,6 +61,9 @@
 	NSString *_imageKeyPath;
 	
 	NSOperationQueue *_imageLoadQueue;
+	
+	NSImage *_placeholder;
+	NSImage *_placeholderIcon;
 }
 
 /**
@@ -105,6 +108,15 @@
  * @details     The accessory view will be displayed below the flow images.
  */
 @property (nonatomic, retain) NSViewController *accessoryController;
+
+/**
+ * @brief       The icon which will be displayed for items which have not had
+ *              image data loaded.
+ * @details     This image should preferably be a template icon (using NSImage's
+ *              \c -setTemplate: method), so that the view can color the icon
+ *              appropriately.
+ */
+@property (nonatomic, retain) NSImage *placeholderIcon;
 
 /**
  * @name        Managing the Selection

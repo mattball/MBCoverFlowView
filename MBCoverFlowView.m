@@ -34,6 +34,7 @@
 
 // Constants
 const float MBCoverFlowViewCellSpacing = 14.0;
+const float MBCoverFlowViewPlaceholderHeight = 600;
 
 const float MBCoverFlowViewTopMargin = 30.0;
 const float MBCoverFlowViewBottomMargin = 20.0;
@@ -65,6 +66,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
 - (void)_refreshLayer:(CALayer *)layer;
 - (CALayer *)_layerForObject:(id)object;
+- (void)_recachePlaceholder;
 @end
 
 
@@ -72,7 +74,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 @synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
             itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar,
-            autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath;
+            autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath,
+            placeholderIcon=_placeholderIcon;
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -82,6 +85,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	if (self = [super initWithFrame:frameRect]) {
 		_imageLoadQueue = [[NSOperationQueue alloc] init];
 		[_imageLoadQueue setMaxConcurrentOperationCount:1];
+		
+		_placeholderIcon = [[NSImage imageNamed:NSImageNameQuickLookTemplate] retain];
 		
 		_autoresizesItems = YES;
 		
@@ -238,12 +243,17 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)dealloc
 {
+	if (_placeholder) {
+		[_placeholder release];
+	}
+	
 	[_scroller release];
 	[_scrollLayer release];
 	[_containerLayer release];
 	self.accessoryController = nil;
 	self.content = nil;
 	self.imageKeyPath = nil;
+	self.placeholderIcon = nil;
 	CGImageRelease(_shadowImage);
 	[_imageLoadQueue release];
 	_imageLoadQueue = nil;
@@ -253,6 +263,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (void)awakeFromNib
 {
 	[self setWantsLayer:YES];
+	[self _recachePlaceholder];
 }
 
 #pragma mark -
@@ -473,6 +484,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[_rightGradientLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinX relativeTo:@"superlayer" attribute:kCAConstraintMaxX scale:.5 offset:[self itemSize].width / 2]];
 	
 	// Update the view
+	[self _recachePlaceholder];
 	[self.layer setNeedsLayout];
 	
 	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectionIndex];
@@ -600,21 +612,21 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	frame.size = NSSizeToCGSize([self itemSize]);
 	
 	[imageLayer setBounds:frame];
-	[imageLayer setBackgroundColor:CGColorGetConstantColor(kCGColorWhite)];
+	imageLayer.contents = (id)[_placeholder imageRef];
 	imageLayer.name = @"image";
 	
 	[layer setBounds:frame];
-	[layer setBackgroundColor:CGColorGetConstantColor(kCGColorClear)];
 	[layer setValue:[NSNumber numberWithInteger:[[_scrollLayer sublayers] count]] forKey:@"index"];
 	[layer setSublayers:[NSArray arrayWithObject:imageLayer]];
 	[layer setSublayerTransform:sublayerTransform];
+	[layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
 	
 	CALayer *reflectionLayer = [CALayer layer];
 	frame.origin.y = -frame.size.height;
 	[reflectionLayer setFrame:frame];
 	reflectionLayer.name = @"reflection";
 	reflectionLayer.transform = CATransform3DMakeScale(1, -1, 1);
-	[reflectionLayer setBackgroundColor:CGColorGetConstantColor(kCGColorWhite)];
+	reflectionLayer.contents = (id)[_placeholder imageRef];
 	[imageLayer addSublayer:reflectionLayer];
 	
 	CALayer *gradientLayer = [CALayer layer];
@@ -656,9 +668,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	NSInteger index = [self.content indexOfObject:object];
 	
 	[layer setValue:[NSNumber numberWithInteger:index] forKey:@"index"];
+	[layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
 	
 	// Create the operation
-	NSOperation *operation = [[MBCoverFlowImageLoadOperation alloc] initWithLayer:layer imageKeyPath:self.imageKeyPath];
+	NSOperation *operation = [[MBCoverFlowImageLoadOperation alloc] initWithLayer:layer imageKeyPath:self.imageKeyPath placeholder:_placeholder];
 	[_imageLoadQueue addOperation:operation];
 	[operation release];
 }
@@ -671,6 +684,78 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		}
 	}
 	return nil;
+}
+
+- (void)_recachePlaceholder
+{
+	if (_placeholder) {
+		[_placeholder release];
+		_placeholder = nil;
+	}
+	
+	NSSize itemSize = self.itemSize;
+	NSSize placeholderSize;
+	placeholderSize.height = MBCoverFlowViewPlaceholderHeight;
+	placeholderSize.width = itemSize.width * placeholderSize.height/itemSize.height;
+	
+	_placeholder = [[NSImage alloc] initWithSize:placeholderSize];
+	[_placeholder lockFocus];
+	NSColor *topColor = [NSColor colorWithCalibratedWhite:0.15 alpha:1.0];
+	NSColor *bottomColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+	NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:topColor endingColor:bottomColor];
+	[gradient drawInRect:NSMakeRect(0, 0, placeholderSize.width, placeholderSize.height) relativeCenterPosition:NSMakePoint(0, 1)];
+	[gradient release];
+	
+	// Draw the top bevel line
+	NSColor *bevelColor = [NSColor colorWithCalibratedWhite:0.3 alpha:1.0];
+	[bevelColor set];
+	NSRectFill(NSMakeRect(0, placeholderSize.height-5.0, placeholderSize.width, 5.0));
+	
+	NSColor *bottomBevelColor = [NSColor colorWithCalibratedWhite:0.1 alpha:1.0];
+	[bottomBevelColor set];
+	NSRectFill(NSMakeRect(0, 0, placeholderSize.width, 5.0));
+	
+	// Draw the placeholder icon
+	if (self.placeholderIcon) {
+		NSRect iconRect;
+		iconRect.size.height = placeholderSize.height/2;
+		iconRect.size.width = iconRect.size.height * [self placeholderIcon].size.width/[self placeholderIcon].size.height;
+		
+		if (iconRect.size.width > placeholderSize.width * 0.666) {
+			iconRect.size.width = placeholderSize.width/2;
+			iconRect.size.height = iconRect.size.width * [self placeholderIcon].size.height/[self placeholderIcon].size.width;
+		}
+		
+		iconRect.origin.x = (placeholderSize.width - iconRect.size.width)/2;
+		iconRect.origin.y = (placeholderSize.height - iconRect.size.height)/2;
+		
+		NSImage *icon = [[NSImage alloc] initWithSize:iconRect.size];
+		[icon lockFocus];
+		NSColor *iconTopColor = [NSColor colorWithCalibratedRed:0.380 green:0.400 blue:0.427 alpha:1.0];
+		NSColor *iconBottomColor = [NSColor colorWithCalibratedRed:0.224 green:0.255 blue:0.302 alpha:1.0];
+		NSGradient *iconGradient = [[NSGradient alloc] initWithStartingColor:iconTopColor endingColor:iconBottomColor];
+		[iconGradient drawInRect:NSMakeRect(0, 0, iconRect.size.width, iconRect.size.width) angle:-90.0];
+		[iconGradient release];
+		[self.placeholderIcon drawInRect:NSMakeRect(0, 0, iconRect.size.width, iconRect.size.height) fromRect:NSZeroRect operation:NSCompositeDestinationIn fraction:1.0];
+		[icon unlockFocus];
+		
+		[icon drawInRect:iconRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+		[icon release];		
+	}
+	
+	[_placeholder unlockFocus];
+	
+	// Update the placeholder for all necessary items
+	for (CALayer *layer in [_scrollLayer sublayers]) {
+		if (![[layer valueForKey:@"hasImage"] boolValue]) {
+			CALayer *imageLayer = [[self.layer sublayers] objectAtIndex:0];
+			CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
+			CGImageRef placeholderRef = [_placeholder imageRef];
+			imageLayer.contents = (id)placeholderRef;
+			reflectionLayer.contents = (id)placeholderRef;
+			NSLog(@"test");
+		}
+	}
 }
 
 #pragma mark -

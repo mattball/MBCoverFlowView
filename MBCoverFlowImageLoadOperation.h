@@ -17,6 +17,7 @@
 @interface MBCoverFlowImageLoadOperation : NSOperation {
 	CALayer *_layer;
 	NSString *_imageKeyPath;
+	NSImage *_placeholder;
 }
 
 /**
@@ -32,7 +33,7 @@
  *
  * @return      The initialized MBCoverFlowImageLoadOperation object.
  */
-- (id)initWithLayer:(CALayer *)layer imageKeyPath:(NSString *)imageKeyPath;
+- (id)initWithLayer:(CALayer *)layer imageKeyPath:(NSString *)imageKeyPath placeholder:(NSImage *)placeholder;
 
 /**
  * @name        Relationships
@@ -50,5 +51,11 @@
  *              will be interpreted as the image.
  */
 @property (nonatomic, copy) NSString *imageKeyPath;
+
+/**
+ * @brief       The image which will be displayed if there is no image content
+ *              for the layer.
+ */
+@property (nonatomic, retain) NSImage *placeholder;
 
 @end

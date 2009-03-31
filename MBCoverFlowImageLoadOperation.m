@@ -12,13 +12,14 @@
 
 @implementation MBCoverFlowImageLoadOperation
 
-@synthesize layer=_layer, imageKeyPath=_imageKeyPath;
+@synthesize layer=_layer, imageKeyPath=_imageKeyPath, placeholder=_placeholder;
 
-- (id)initWithLayer:(CALayer *)layer imageKeyPath:(NSString *)imageKeyPath;
+- (id)initWithLayer:(CALayer *)layer imageKeyPath:(NSString *)imageKeyPath placeholder:(NSImage *)placeholder
 {
 	if (self = [super init]) {
 		_layer = [layer retain];
 		_imageKeyPath = [imageKeyPath copy];
+		_placeholder = [placeholder retain];
 	}
 	return self;
 }
@@ -27,6 +28,7 @@
 {
 	self.layer = nil;
 	self.imageKeyPath = nil;
+	self.placeholder = nil;
 	[super dealloc];
 }
 
@@ -45,6 +47,13 @@
 			image = [object valueForKeyPath:self.imageKeyPath];
 		} else if ([object isKindOfClass:[NSImage class]]) {
 			image = (NSImage *)object;
+		}
+		
+		if (!image) {
+			image = self.placeholder;
+			[self.layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
+		} else {
+			[self.layer setValue:[NSNumber numberWithBool:YES] forKey:@"hasImage"];
 		}
 		
 		CGImageRef imageRef = [image imageRef];
