@@ -12,7 +12,6 @@
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C91E73FC0F79F75C00FD319E /* MBCoverFlowScroller.m in Sources */ = {isa = PBXBuildFile; fileRef = C91E73FB0F79F75C00FD319E /* MBCoverFlowScroller.m */; };
-		C91E7EE70F7F442F00FD319E /* MBCoverFlowImageLoadOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = C91E7EE60F7F442F00FD319E /* MBCoverFlowImageLoadOperation.m */; };
 		C9D1735A0F6B38CD0097827F /* MBCoverFlowView.m in Sources */ = {isa = PBXBuildFile; fileRef = C9D173590F6B38CD0097827F /* MBCoverFlowView.m */; };
 		C9D1737A0F6B3ADC0097827F /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9D173790F6B3ADC0097827F /* QuartzCore.framework */; };
 		C9D178230F6F97D60097827F /* MBCoverFlowViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C9D178220F6F97D60097827F /* MBCoverFlowViewController.m */; };
@@ -32,8 +31,6 @@
 		8D1107320486CEB800E47090 /* MBCoverFlowView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MBCoverFlowView.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C91E73FA0F79F75C00FD319E /* MBCoverFlowScroller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBCoverFlowScroller.h; sourceTree = "<group>"; };
 		C91E73FB0F79F75C00FD319E /* MBCoverFlowScroller.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBCoverFlowScroller.m; sourceTree = "<group>"; };
-		C91E7EE50F7F442F00FD319E /* MBCoverFlowImageLoadOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBCoverFlowImageLoadOperation.h; sourceTree = "<group>"; };
-		C91E7EE60F7F442F00FD319E /* MBCoverFlowImageLoadOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBCoverFlowImageLoadOperation.m; sourceTree = "<group>"; };
 		C9D173580F6B38CD0097827F /* MBCoverFlowView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBCoverFlowView.h; sourceTree = "<group>"; };
 		C9D173590F6B38CD0097827F /* MBCoverFlowView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBCoverFlowView.m; sourceTree = "<group>"; };
 		C9D173790F6B3ADC0097827F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
@@ -65,8 +62,6 @@
 				C9D173590F6B38CD0097827F /* MBCoverFlowView.m */,
 				C91E73FA0F79F75C00FD319E /* MBCoverFlowScroller.h */,
 				C91E73FB0F79F75C00FD319E /* MBCoverFlowScroller.m */,
-				C91E7EE50F7F442F00FD319E /* MBCoverFlowImageLoadOperation.h */,
-				C91E7EE60F7F442F00FD319E /* MBCoverFlowImageLoadOperation.m */,
 				C9E9ACB40F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.h */,
 				C9E9ACB50F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m */,
 			);
@@ -200,7 +195,6 @@
 				C9D178230F6F97D60097827F /* MBCoverFlowViewController.m in Sources */,
 				C9E9ACB60F78B188004DDC0A /* NSImage+MBCoverFlowAdditions.m in Sources */,
 				C91E73FC0F79F75C00FD319E /* MBCoverFlowScroller.m in Sources */,
-				C91E7EE70F7F442F00FD319E /* MBCoverFlowImageLoadOperation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

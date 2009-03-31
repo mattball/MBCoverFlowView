@@ -26,7 +26,6 @@
 
 #import "MBCoverFlowView.h"
 
-#import "MBCoverFlowImageLoadOperation.h"
 #import "MBCoverFlowScroller.h"
 #import "NSImage+MBCoverFlowAdditions.h"
 
@@ -65,6 +64,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (CALayer *)_newLayer;
 - (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
 - (void)_refreshLayer:(CALayer *)layer;
+- (void)_loadImageForLayer:(CALayer *)layer;
 - (CALayer *)_layerForObject:(id)object;
 - (void)_recachePlaceholder;
 @end
@@ -72,7 +72,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 @implementation MBCoverFlowView
 
-@synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
+@synthesize accessoryController=_accessoryController, selectedIndex=_selectedIndex, 
             itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar,
             autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath,
             placeholderIcon=_placeholderIcon;
@@ -282,10 +282,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {	
 	switch ([theEvent keyCode]) {
 		case MBLeftArrowKeyCode:
-			self.selectionIndex -= 1;
+			self.selectedIndex -= 1;
 			break;
 		case MBRightArrowKeyCode:
-			self.selectionIndex += 1;
+			self.selectedIndex += 1;
 			break;
 		default:
 			[super keyDown:theEvent];
@@ -298,7 +298,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	NSPoint mouseLocation = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	NSInteger clickedIndex = [self indexOfItemAtPoint:mouseLocation];
 	if (clickedIndex != NSNotFound) {
-		self.selectionIndex = clickedIndex;
+		self.selectedIndex = clickedIndex;
 	}
 }
 
@@ -306,15 +306,15 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {
 	if (fabs([theEvent deltaY]) > MBCoverFlowScrollMinimumDeltaThreshold) {
 		if ([theEvent deltaY] > 0) {
-			self.selectionIndex -= 1;
+			self.selectedIndex -= 1;
 		} else {
-			self.selectionIndex += 1;
+			self.selectedIndex += 1;
 		}
 	} else if (fabs([theEvent deltaX]) > MBCoverFlowScrollMinimumDeltaThreshold) {
 		if ([theEvent deltaX] > 0) {
-			self.selectionIndex -= 1;
+			self.selectedIndex -= 1;
 		} else {
-			self.selectionIndex += 1;
+			self.selectedIndex += 1;
 		}
 	}
 }
@@ -353,7 +353,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
 
-	self.selectionIndex = self.selectionIndex;
+	self.selectedIndex = self.selectedIndex;
 }
 
 #pragma mark -
@@ -399,7 +399,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[oldContent release];
 	
 	[_scroller setNumberOfIncrements:fmax([self.content count]-1, 0)];
-	self.selectionIndex = self.selectionIndex;
+	self.selectedIndex = self.selectedIndex;
 }
 
 - (void)setImageKeyPath:(NSString *)keyPath
@@ -489,7 +489,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[self _recachePlaceholder];
 	[self.layer setNeedsLayout];
 	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectionIndex];
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectedIndex];
 	CGRect layerFrame = [layer frame];
 	
 	// Scroll so the selected item is centered
@@ -529,7 +529,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 #pragma mark Managing the Selection
 
-- (void)setSelectionIndex:(NSInteger)newIndex
+- (void)setSelectedIndex:(NSInteger)newIndex
 {
 	if (newIndex >= [[_scrollLayer sublayers] count] || newIndex < 0) {
 		return;
@@ -540,20 +540,20 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	else
 		[CATransaction setValue:[NSNumber numberWithFloat:0.7f] forKey:@"animationDuration"];
 	
-	_selectionIndex = newIndex;
+	_selectedIndex = newIndex;
 	[_scrollLayer layoutIfNeeded];
 	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:_selectionIndex];
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:_selectedIndex];
 	CGRect layerFrame = [layer frame];
 	
 	// Scroll so the selected item is centered
 	[_scrollLayer scrollToPoint:CGPointMake([self _positionOfSelectedItem], layerFrame.origin.y)];
-	[_scroller setIntegerValue:self.selectionIndex];
+	[_scroller setIntegerValue:self.selectedIndex];
 }
 
 - (id)selectedObject
 {
-	return [self.content objectAtIndex:self.selectionIndex];
+	return [self.content objectAtIndex:self.selectedIndex];
 }
 
 - (void)setSelectedObject:(id)anObject
@@ -563,7 +563,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		return;
 	}
 	
-	self.selectionIndex = [self.content indexOfObject:anObject];
+	self.selectedIndex = [self.content indexOfObject:anObject];
 }
 
 #pragma mark Layout Support
@@ -571,12 +571,12 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (NSInteger)indexOfItemAtPoint:(NSPoint)aPoint
 {
 	// Check the selected item first
-	if (NSPointInRect(aPoint, [self rectForItemAtIndex:self.selectionIndex])) {
-		return self.selectionIndex;
+	if (NSPointInRect(aPoint, [self rectForItemAtIndex:self.selectedIndex])) {
+		return self.selectedIndex;
 	}
 	
 	// Check the items to the left, in descending order
-	NSInteger index = self.selectionIndex-1;
+	NSInteger index = self.selectedIndex-1;
 	while (index >= 0) {
 		NSRect layerRect = [self rectForItemAtIndex:index];
 		if (NSPointInRect(aPoint, layerRect)) {
@@ -586,7 +586,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	
 	// Check the items to the right, in ascending order
-	index = self.selectionIndex+1;
+	index = self.selectedIndex+1;
 	while (index < [[_scrollLayer sublayers] count]) {
 		NSRect layerRect = [self rectForItemAtIndex:index];
 		if (NSPointInRect(aPoint, layerRect)) {
@@ -666,23 +666,23 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (float)_positionOfSelectedItem
 {
 	// this is the same math used in layoutSublayersOfLayer:, before tweaking
-	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectionIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
+	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectedIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
 }
 
 - (void)_scrollerChange:(MBCoverFlowScroller *)sender
 {
 	NSScrollerPart clickedPart = [sender hitPart];
 	if (clickedPart == NSScrollerIncrementLine) {
-		self.selectionIndex += 1;
+		self.selectedIndex += 1;
 	} else if (clickedPart == NSScrollerDecrementLine) {
-		self.selectionIndex -= 1;
+		self.selectedIndex -= 1;
 	} else if (clickedPart == NSScrollerKnob) {
-		self.selectionIndex = [sender integerValue];
+		self.selectedIndex = [sender integerValue];
 	}
 }
 
 - (void)_refreshLayer:(CALayer *)layer
-{		
+{
 	NSObject *object = [layer valueForKey:@"representedObject"];
 	NSInteger index = [self.content indexOfObject:object];
 	
@@ -690,9 +690,42 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
 	
 	// Create the operation
-	NSOperation *operation = [[MBCoverFlowImageLoadOperation alloc] initWithLayer:layer imageKeyPath:self.imageKeyPath placeholder:_placeholder];
+	NSInvocationOperation *operation = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(_loadImageForLayer:) object:layer];
 	[_imageLoadQueue addOperation:operation];
 	[operation release];
+}
+
+- (void)_loadImageForLayer:(CALayer *)layer
+{
+	@try {
+		NSImage *image;
+		NSObject *object = [layer valueForKey:@"representedObject"];
+		
+		if (self.imageKeyPath != nil) {
+			image = [object valueForKeyPath:self.imageKeyPath];
+		} else if ([object isKindOfClass:[NSImage class]]) {
+			image = (NSImage *)object;
+		}
+		
+		if (!image) {
+			image = _placeholder;
+			[layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
+		} else {
+			[layer setValue:[NSNumber numberWithBool:YES] forKey:@"hasImage"];
+		}
+		
+		CGImageRef imageRef = [image imageRef];
+		
+		CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
+		CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
+		
+		imageLayer.contents = (id)imageRef;
+		reflectionLayer.contents = (id)imageRef;
+		imageLayer.backgroundColor = NULL;
+		reflectionLayer.backgroundColor = NULL;
+	} @catch (NSException *e) {
+		// If the key path isn't valid, do nothing
+	}
 }
 
 - (CALayer *)_layerForObject:(id)object
@@ -806,18 +839,18 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		gradientFrame.origin.y = 0;
 		
 		// Create the perspective effect
-		if (index < self.selectionIndex) {
+		if (index < self.selectedIndex) {
 			// Left
-			frame.origin.x += [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(self.selectionIndex - index - MBCoverFlowViewPerspectiveRowScaleFactor);
+			frame.origin.x += [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(self.selectedIndex - index - MBCoverFlowViewPerspectiveRowScaleFactor);
 			imageLayer.transform = _leftTransform;
 			imageLayer.zPosition = MBCoverFlowViewPerspectiveSidePosition;
-			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (self.selectionIndex - index);
-		} else if (index > self.selectionIndex) {
+			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (self.selectedIndex - index);
+		} else if (index > self.selectedIndex) {
 			// Right
-			frame.origin.x -= [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(index - self.selectionIndex - MBCoverFlowViewPerspectiveRowScaleFactor);
+			frame.origin.x -= [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(index - self.selectedIndex - MBCoverFlowViewPerspectiveRowScaleFactor);
 			imageLayer.transform = _rightTransform;
 			imageLayer.zPosition = MBCoverFlowViewPerspectiveSidePosition;
-			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (index - self.selectionIndex);
+			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (index - self.selectedIndex);
 		} else {
 			// Center
 			imageLayer.transform = CATransform3DIdentity;
@@ -836,7 +869,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 + (NSSet *)keyPathsForValuesAffectingSelectedObject
 {
-	return [NSSet setWithObjects:@"selectionIndex", nil];
+	return [NSSet setWithObjects:@"selectedIndex", nil];
 }
 
 @end

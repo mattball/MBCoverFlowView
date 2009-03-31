@@ -36,7 +36,7 @@
  *              items using the Cover Flow style.
  */
 @interface MBCoverFlowView : NSView {
-	NSInteger _selectionIndex;
+	NSInteger _selectedIndex;
 	
 	CAScrollLayer *_scrollLayer;
 	CALayer *_containerLayer;
@@ -127,7 +127,7 @@
 /**
  * @brief       The index of the receiver's front-most item.
  */
-@property (nonatomic, assign) NSInteger selectionIndex;
+@property (nonatomic, assign) NSInteger selectedIndex;
 
 /**
  * @brief       The receiver's front-most item.
