@@ -105,7 +105,9 @@
 /**
  * @brief       The controller which manages the receiver's accessory view.
  *
- * @details     The accessory view will be displayed below the flow images.
+ * @details     The accessory controller's representedObject will be bound
+ *              to the receiver's selectedObject. The accessory controller's 
+ *              view will be displayed below the flow images.
  */
 @property (nonatomic, retain) NSViewController *accessoryController;
 
@@ -126,6 +128,11 @@
  * @brief       The index of the receiver's front-most item.
  */
 @property (nonatomic, assign) NSInteger selectionIndex;
+
+/**
+ * @brief       The receiver's front-most item.
+ */
+@property (nonatomic, assign) id selectedObject;
 
 /**
  * @name    Layout Support

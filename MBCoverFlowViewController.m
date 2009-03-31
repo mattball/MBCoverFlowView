@@ -42,6 +42,7 @@
 	{
 		NSImage *image = [[NSImage alloc] initWithContentsOfFile:[@"/Users/matt/Pictures/Photo Booth" stringByAppendingPathComponent:file]];
 		if (image != nil) {
+			[image setName:file];
 			[images addObject:image];
 		}
 		[image release];
@@ -57,12 +58,17 @@
 	[label setBezeled:NO];
 	[label setEditable:NO];
 	[label setSelectable:NO];
-	[label setObjectValue:@"Test"];
 	[label setDrawsBackground:NO];
 	[label setTextColor:[NSColor whiteColor]];
 	[label setFont:[NSFont boldSystemFontOfSize:12.0]];
+	[label setAutoresizingMask:NSViewWidthSizable];
+	[label setAlignment:NSCenterTextAlignment];
 	[label sizeToFit];
+	NSRect labelFrame = [label frame];
+	labelFrame.size.width = 400;
+	[label setFrame:labelFrame];
 	[labelViewController setView:label];
+	[label bind:@"value" toObject:labelViewController withKeyPath:@"representedObject.name" options:nil];
 	[label release];
 	[(MBCoverFlowView *)self.view setAccessoryController:labelViewController];
 	[labelViewController release];

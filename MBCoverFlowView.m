@@ -77,6 +77,8 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
             autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath,
             placeholderIcon=_placeholderIcon;
 
+@dynamic selectedObject;
+
 #pragma mark -
 #pragma mark Life Cycle
 
@@ -502,6 +504,29 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[self resizeSubviewsWithOldSize:[self frame].size];
 }
 
+- (void)setAccessoryController:(NSViewController *)aController
+{
+	if (aController == self.accessoryController)
+		return;
+	
+	if (self.accessoryController != nil) {
+		[self.accessoryController.view removeFromSuperview];
+		[self.accessoryController unbind:@"representedObject"];
+		[_accessoryController release];
+		_accessoryController = nil;
+		[self setNextResponder:nil];
+	}
+	
+	if (aController != nil) {
+		_accessoryController = [aController retain];
+		[self addSubview:self.accessoryController.view];
+		[self setNextResponder:self.accessoryController];
+		[self.accessoryController bind:@"representedObject" toObject:self withKeyPath:@"selectedObject" options:nil];
+	}
+	
+	[self resizeSubviewsWithOldSize:[self frame].size];
+}
+
 #pragma mark Managing the Selection
 
 - (void)setSelectionIndex:(NSInteger)newIndex
@@ -526,25 +551,19 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[_scroller setIntegerValue:self.selectionIndex];
 }
 
-- (void)setAccessoryController:(NSViewController *)aController
+- (id)selectedObject
 {
-	if (aController == self.accessoryController)
+	return [self.content objectAtIndex:self.selectionIndex];
+}
+
+- (void)setSelectedObject:(id)anObject
+{
+	if (![self.content containsObject:anObject]) {
+		NSLog(@"[MBCoverFlowView setSelectedObject:] -- The view does not contain the specified object.");
 		return;
-	
-	if (self.accessoryController != nil) {
-		[self.accessoryController.view removeFromSuperview];
-		[_accessoryController release];
-		_accessoryController = nil;
-		[self setNextResponder:nil];
 	}
 	
-	if (aController != nil) {
-		_accessoryController = [aController retain];
-		[self addSubview:self.accessoryController.view];
-		[self setNextResponder:self.accessoryController];
-	}
-	
-	[self resizeSubviewsWithOldSize:[self frame].size];
+	self.selectionIndex = [self.content indexOfObject:anObject];
 }
 
 #pragma mark Layout Support
@@ -811,6 +830,13 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		[reflectionLayer setFrame:reflectionFrame];
 		[reflectionLayer setBounds:CGRectMake(0, 0, [reflectionLayer bounds].size.width, [reflectionLayer bounds].size.height)];
 	}
+}
+
+#pragma mark NSKeyValueObserving
+
++ (NSSet *)keyPathsForValuesAffectingSelectedObject
+{
+	return [NSSet setWithObjects:@"selectionIndex", nil];
 }
 
 @end
