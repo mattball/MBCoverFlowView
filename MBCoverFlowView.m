@@ -413,6 +413,11 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	
 	[oldContent release];
 	
+	// Update the layer indices
+	for (CALayer *layer in [_scrollLayer sublayers]) {
+		[layer setValue:[NSNumber numberWithInteger:[self.content indexOfObject:[layer valueForKey:@"representedObject"]]] forKey:@"index"];
+	}
+	
 	[_scroller setNumberOfIncrements:fmax([self.content count]-1, 0)];
 	self.selectedIndex = self.selectedIndex;
 }
@@ -836,6 +841,12 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 
 - (void)_setSelectionIndex:(NSInteger)index
 {
+	if (index < 0) {
+		index = 0;
+	} else if (index >= [self.content count]) {
+		index = [self.content count] - 1;
+	}
+	
 	if ([self infoForBinding:@"selectionIndex"]) {
 		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
 		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
