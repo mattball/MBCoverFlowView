@@ -1,0 +1,16 @@
+What Is It?
+===========
+
+MBCoverFlowView is an open-source implementation of the Cover Flow interface found in iTunes, Finder, etc.
+
+![MBCoverFlowView screenshot](http://farm4.static.flickr.com/3349/3486406907_30490b7970_o.png)
+
+How Do I Use It?
+================
+
+To use MBCoverFlowView in your app, the minimum requirement is that you set both the ``imageKeyPath`` and ``content`` properties of the view. The ``imageKeyPath`` property should be set to the key path which will access the image to display for each item in the ``content`` array.
+
+Bindings Are Cool! Can I Use Them?
+==================================
+
+Of course! Currently, MBCoverFlowView has bindings for the ``@"content"`` and ``@"selectionIndex"`` keys.
