@@ -369,6 +369,11 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	self.selectedIndex = self.selectedIndex;
 }
 
+- (BOOL)mouseDownCanMoveWindow
+{
+	return NO;
+}
+
 #pragma mark -
 #pragma mark Subclass Methods
 
