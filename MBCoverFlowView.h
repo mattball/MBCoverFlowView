@@ -63,6 +63,9 @@
 	NSArray *_content;
 	NSString *_imageKeyPath;
 	NSOperationQueue *_imageLoadQueue;
+	
+	// Bindings
+	NSMutableDictionary *_bindingInfo;
 }
 
 /**
@@ -72,7 +75,7 @@
 /**
  * @brief       The receiver's content object.
  */
-@property (nonatomic, retain) NSArray *content;
+@property (nonatomic, copy) NSArray *content;
 
 /**
  * @brief       The key path which returns the image for an item

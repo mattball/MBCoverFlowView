@@ -32,7 +32,6 @@
 #import <QuartzCore/QuartzCore.h>
 
 // Constants
-//const float MBCoverFlowViewCellSpacing = 14.0;
 #define MBCoverFlowViewCellSpacing ([self itemSize].width/10)
 
 const float MBCoverFlowViewPlaceholderHeight = 600;
@@ -57,6 +56,11 @@ const float MBCoverFlowViewPerspectiveSideSpacingFactor = 0.75;
 const float MBCoverFlowViewPerspectiveRowScaleFactor = 0.85;
 const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
+// Bindings
+static NSString *MBCoverFlowViewContentBindingContext;
+static NSString *MBCoverFlowViewImagePathContext;
+static NSString *MBCoverFlowViewSelectionIndexContext;
+
 // Key Codes
 #define MBLeftArrowKeyCode 123
 #define MBRightArrowKeyCode 124
@@ -69,6 +73,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 - (void)_loadImageForLayer:(CALayer *)layer;
 - (CALayer *)_layerForObject:(id)object;
 - (void)_recachePlaceholder;
+- (void)_setSelectionIndex:(NSInteger)index; // For two-way bindings
 @end
 
 
@@ -84,9 +89,17 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 #pragma mark -
 #pragma mark Life Cycle
 
++ (void)initialize
+{
+	[self exposeBinding:@"content"];
+	[self exposeBinding:@"selectionIndex"];
+}
+
 - (id)initWithFrame:(NSRect)frameRect
 {
 	if (self = [super initWithFrame:frameRect]) {
+		_bindingInfo = [[NSMutableDictionary alloc] init];
+		
 		_imageLoadQueue = [[NSOperationQueue alloc] init];
 		[_imageLoadQueue setMaxConcurrentOperationCount:1];
 		
@@ -247,6 +260,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)dealloc
 {	
+	[_bindingInfo release];
 	[_scroller release];
 	[_scrollLayer release];
 	[_containerLayer release];
@@ -281,10 +295,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {	
 	switch ([theEvent keyCode]) {
 		case MBLeftArrowKeyCode:
-			self.selectedIndex -= 1;
+			[self _setSelectionIndex:(self.selectedIndex - 1)];
 			break;
 		case MBRightArrowKeyCode:
-			self.selectedIndex += 1;
+			[self _setSelectionIndex:(self.selectedIndex + 1)];
 			break;
 		default:
 			[super keyDown:theEvent];
@@ -297,7 +311,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	NSPoint mouseLocation = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	NSInteger clickedIndex = [self indexOfItemAtPoint:mouseLocation];
 	if (clickedIndex != NSNotFound) {
-		self.selectedIndex = clickedIndex;
+		[self _setSelectionIndex:clickedIndex];
 	}
 }
 
@@ -305,15 +319,15 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {
 	if (fabs([theEvent deltaY]) > MBCoverFlowScrollMinimumDeltaThreshold) {
 		if ([theEvent deltaY] > 0) {
-			self.selectedIndex -= 1;
+			[self _setSelectionIndex:(self.selectedIndex - 1)];
 		} else {
-			self.selectedIndex += 1;
+			[self _setSelectionIndex:(self.selectedIndex + 1)];
 		}
 	} else if (fabs([theEvent deltaX]) > MBCoverFlowScrollMinimumDeltaThreshold) {
 		if ([theEvent deltaX] > 0) {
-			self.selectedIndex -= 1;
+			[self _setSelectionIndex:(self.selectedIndex - 1)];
 		} else {
-			self.selectedIndex += 1;
+			[self _setSelectionIndex:(self.selectedIndex + 1)];
 		}
 	}
 }
@@ -367,14 +381,14 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	}
 	
 	NSArray *oldContent = [self.content retain];
-	
+
 	if (_content) {
 		[_content release];
 		_content = nil;
 	}
 	
 	if (newContents != nil) {
-		_content = [newContents retain];
+		_content = [newContents copy];
 	}
 	
 	// Add any new items
@@ -384,6 +398,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	for (NSObject *object in itemsToAdd) {
 		CALayer *layer = [self _newLayer];
 		[layer setValue:object forKey:@"representedObject"];
+		[object addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
 		[self _refreshLayer:layer];
 	}
 	
@@ -392,6 +407,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	[itemsToRemove removeObjectsInArray:self.content];
 	for (NSObject *object in itemsToRemove) {
 		CALayer *layer = [self _layerForObject:object];
+		[[layer valueForKey:@"representedObject"] removeObserver:self forKeyPath:self.imageKeyPath];
 		[layer removeFromSuperlayer];
 	}
 	
@@ -403,6 +419,11 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
 - (void)setImageKeyPath:(NSString *)keyPath
 {
+	// Remove any observations for the existing key path
+	for (NSObject *object in self.content) {
+		[object removeObserver:self forKeyPath:self.imageKeyPath];
+	}
+	
 	if (_imageKeyPath) {
 		[_imageKeyPath release];
 		_imageKeyPath = nil;
@@ -414,6 +435,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 	
 	// Refresh all the layers with images at the new key path
 	for (CALayer *layer in [_scrollLayer sublayers]) {
+		[[layer valueForKey:@"representedObject"] addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
 		[self _refreshLayer:layer];
 	}
 }
@@ -562,7 +584,7 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 		return;
 	}
 	
-	self.selectedIndex = [self.content indexOfObject:anObject];
+	[self _setSelectionIndex:[self.content indexOfObject:anObject]];
 }
 
 #pragma mark Layout Support
@@ -672,11 +694,11 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 {
 	NSScrollerPart clickedPart = [sender hitPart];
 	if (clickedPart == NSScrollerIncrementLine) {
-		self.selectedIndex += 1;
+		[self _setSelectionIndex:(self.selectedIndex + 1)];
 	} else if (clickedPart == NSScrollerDecrementLine) {
-		self.selectedIndex -= 1;
+		[self _setSelectionIndex:(self.selectedIndex - 1)];
 	} else if (clickedPart == NSScrollerKnob) {
-		self.selectedIndex = [sender integerValue];
+		[self _setSelectionIndex:[sender integerValue]];
 	}
 }
 
@@ -704,6 +726,10 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 			image = [object valueForKeyPath:self.imageKeyPath];
 		} else if ([object isKindOfClass:[NSImage class]]) {
 			image = (NSImage *)object;
+		}
+		
+		if ([image isKindOfClass:[NSData class]]) {
+			image = [[[NSImage alloc] initWithData:(NSData *)image] autorelease];
 		}
 		
 		CGImageRef imageRef;
@@ -804,9 +830,20 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 			CALayer *reflectionLayer = [[imageLayer sublayers] objectAtIndex:0];
 			imageLayer.contents = (id)_placeholderRef;
 			reflectionLayer.contents = (id)_placeholderRef;
-			NSLog(@"test");
 		}
 	}
+}
+
+- (void)_setSelectionIndex:(NSInteger)index
+{
+	if ([self infoForBinding:@"selectionIndex"]) {
+		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
+		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
+		[container setValue:[NSNumber numberWithInteger:index] forKey:keyPath];
+		return;
+	}
+	
+	self.selectedIndex = index;
 }
 
 #pragma mark -
@@ -869,6 +906,99 @@ const float MBCoverFlowViewPerspectiveAngle = 0.79;
 + (NSSet *)keyPathsForValuesAffectingSelectedObject
 {
 	return [NSSet setWithObjects:@"selectedIndex", nil];
+}
+
+#pragma mark -
+#pragma mark Bindings
+
+- (void)bind:(NSString *)bindingName toObject:(id)observableObject withKeyPath:(NSString *)observableKeyPath options:(NSDictionary *)options
+{
+	if ([bindingName isEqualToString:@"content"]) {
+		if ([_bindingInfo objectForKey:@"content"] != nil) {
+			[self unbind:@"content"];
+		}
+		
+		// Observe controller for changes
+		NSDictionary *bindingsData = [NSDictionary dictionaryWithObjectsAndKeys:
+									  observableObject, NSObservedObjectKey,
+									  [[observableKeyPath copy] autorelease], NSObservedKeyPathKey,
+									  [[options copy] autorelease], NSOptionsKey, nil];
+		[_bindingInfo setObject:bindingsData forKey:@"content"];
+		
+		[observableObject addObserver:self
+						   forKeyPath:observableKeyPath
+							  options:(NSKeyValueObservingOptionNew |
+									   NSKeyValueObservingOptionOld)
+							  context:&MBCoverFlowViewContentBindingContext];
+	} else if ([bindingName isEqualToString:@"selectionIndex"]) {
+		if ([_bindingInfo objectForKey:@"selectionIndex"] != nil) {
+			[self unbind:@"selectionIndex"];
+		}
+		
+		// Observe controller for changes
+		NSDictionary *bindingsData = [NSDictionary dictionaryWithObjectsAndKeys:
+									  observableObject, NSObservedObjectKey,
+									  [[observableKeyPath copy] autorelease], NSObservedKeyPathKey,
+									  [[options copy] autorelease], NSOptionsKey, nil];
+		[_bindingInfo setObject:bindingsData forKey:@"selectionIndex"];
+		
+		[observableObject addObserver:self
+						   forKeyPath:observableKeyPath
+							  options:(NSKeyValueObservingOptionNew |
+									   NSKeyValueObservingOptionOld)
+							  context:&MBCoverFlowViewSelectionIndexContext];
+	} else {
+		[super bind:bindingName toObject:observableObject withKeyPath:observableKeyPath options:options];
+	}
+	[self setNeedsDisplay:YES];
+}
+
+- (void)unbind:(NSString *)bindingName
+{
+	if ([bindingName isEqualToString:@"content"])
+	{
+		id container = [[self infoForBinding:@"content"] objectForKey:NSObservedObjectKey];
+		NSString *keyPath = [[self infoForBinding:@"content"] objectForKey:NSObservedKeyPathKey];
+		
+		[container removeObserver:self forKeyPath:keyPath];
+		[_bindingInfo removeObjectForKey:@"content"];
+		self.content = nil;
+	} else if ([bindingName isEqualToString:@"selectionIndex"]) {
+		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
+		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
+		
+		[container removeObserver:self forKeyPath:keyPath];
+		[_bindingInfo removeObjectForKey:@"selectionIndex"];
+	} else {
+		[super unbind:bindingName];
+	}
+	[self setNeedsDisplay:YES];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
+{
+	if (context == &MBCoverFlowViewContentBindingContext) {
+		id container = [[self infoForBinding:@"content"] objectForKey:NSObservedObjectKey];
+		NSString *keyPath = [[self infoForBinding:@"content"] objectForKey:NSObservedKeyPathKey];
+		self.content = [container valueForKeyPath:keyPath];
+	} else if (context == &MBCoverFlowViewSelectionIndexContext) {
+		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
+		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
+		self.selectedIndex = [[container valueForKeyPath:keyPath] integerValue];
+	} else if (context == &MBCoverFlowViewImagePathContext) {
+		[self _refreshLayer:[self _layerForObject:object]];
+	} else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
+}
+
+- (NSDictionary *)infoForBinding:(NSString *)bindingName
+{
+	NSDictionary *info = [_bindingInfo objectForKey:bindingName];
+	if (info == nil) {
+		info = [super infoForBinding:bindingName];
+	}
+	return info;
 }
 
 @end
