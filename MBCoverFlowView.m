@@ -64,6 +64,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 // Key Codes
 #define MBLeftArrowKeyCode 123
 #define MBRightArrowKeyCode 124
+#define MBReturnKeyCode 36
 
 @interface MBCoverFlowView ()
 - (float)_positionOfSelectedItem;
@@ -82,7 +83,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 @synthesize accessoryController=_accessoryController, selectedIndex=_selectedIndex, 
             itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar,
             autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath,
-            placeholderIcon=_placeholderIcon;
+            placeholderIcon=_placeholderIcon, target=_target, action=_action;
 
 @dynamic selectedObject;
 
@@ -300,6 +301,11 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 		case MBRightArrowKeyCode:
 			[self _setSelectionIndex:(self.selectedIndex + 1)];
 			break;
+		case MBReturnKeyCode:
+			if (self.target && self.action) {
+				[self.target performSelector:self.action withObject:self];
+			}
+			break;
 		default:
 			[super keyDown:theEvent];
 			break;
@@ -308,6 +314,10 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
+	if ([theEvent clickCount] == 2 && self.target && self.action) {
+		[self.target performSelector:self.action withObject:self];
+	}
+	
 	NSPoint mouseLocation = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	NSInteger clickedIndex = [self indexOfItemAtPoint:mouseLocation];
 	if (clickedIndex != NSNotFound) {

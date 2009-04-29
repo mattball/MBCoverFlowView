@@ -66,6 +66,10 @@
 	
 	// Bindings
 	NSMutableDictionary *_bindingInfo;
+	
+	// Actions
+	id _target;
+	SEL _action;
 }
 
 /**
@@ -135,6 +139,22 @@
  * @brief       The receiver's front-most item.
  */
 @property (nonatomic, assign) id selectedObject;
+
+/**
+ * @name        The Target/Action Mechanism
+ */
+
+/**
+ * @brief       The target object that receives action messages from the view.
+ */
+@property (nonatomic, assign) id target;
+
+/**
+ * @brief       The selector associated with the view.
+ * @details     The action will be called when the user double-clicks an item
+ *              or presses the Return key.
+ */
+@property (nonatomic, assign) SEL action;
 
 /**
  * @name    Layout Support
