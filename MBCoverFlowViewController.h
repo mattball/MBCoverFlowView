@@ -28,9 +28,7 @@
 
 
 @interface MBCoverFlowViewController : NSViewController {
-	NSArray *items;
+	
 }
-
-- (void)addItem:(id)sender;
 
 @end

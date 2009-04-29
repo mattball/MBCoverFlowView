@@ -413,7 +413,9 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	for (NSObject *object in itemsToAdd) {
 		CALayer *layer = [self _newLayer];
 		[layer setValue:object forKey:@"representedObject"];
-		[object addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
+		if (self.imageKeyPath) {
+			[object addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
+		}
 		[self _refreshLayer:layer];
 	}
 	
@@ -422,7 +424,9 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	[itemsToRemove removeObjectsInArray:self.content];
 	for (NSObject *object in itemsToRemove) {
 		CALayer *layer = [self _layerForObject:object];
-		[[layer valueForKey:@"representedObject"] removeObserver:self forKeyPath:self.imageKeyPath];
+		if (self.imageKeyPath) {
+			[[layer valueForKey:@"representedObject"] removeObserver:self forKeyPath:self.imageKeyPath];
+		}
 		[layer removeFromSuperlayer];
 	}
 	
@@ -438,13 +442,13 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 }
 
 - (void)setImageKeyPath:(NSString *)keyPath
-{
-	// Remove any observations for the existing key path
-	for (NSObject *object in self.content) {
-		[object removeObserver:self forKeyPath:self.imageKeyPath];
-	}
-	
+{	
 	if (_imageKeyPath) {
+		// Remove any observations for the existing key path
+		for (NSObject *object in self.content) {
+			[object removeObserver:self forKeyPath:self.imageKeyPath];
+		}
+		
 		[_imageKeyPath release];
 		_imageKeyPath = nil;
 	}
@@ -455,7 +459,9 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	
 	// Refresh all the layers with images at the new key path
 	for (CALayer *layer in [_scrollLayer sublayers]) {
-		[[layer valueForKey:@"representedObject"] addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
+		if (self.imageKeyPath) {
+			[[layer valueForKey:@"representedObject"] addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
+		}
 		[self _refreshLayer:layer];
 	}
 }

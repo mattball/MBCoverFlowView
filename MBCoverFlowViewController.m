@@ -31,27 +31,7 @@
 @implementation MBCoverFlowViewController
 
 - (void)awakeFromNib
-{
-	NSMutableArray *images = [NSMutableArray array];
-	
-	NSString *file;
-	NSDirectoryEnumerator *dirEnum = [[NSFileManager defaultManager] enumeratorAtPath:@"/Users/matt/Pictures/Photo Booth"];
-	
-	int count = 0;
-	while ((file = [dirEnum nextObject])) 
-	{
-		NSImage *image = [[NSImage alloc] initWithContentsOfFile:[@"/Users/matt/Pictures/Photo Booth" stringByAppendingPathComponent:file]];
-		if (image != nil) {
-			[image setName:file];
-			[images addObject:image];
-		}
-		[image release];
-		
-		count++;
-	}
-	
-	items = [images copy];
-	
+{	
 	NSViewController *labelViewController = [[NSViewController alloc] initWithNibName:nil bundle:nil];
 	NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 10, 10)];
 	[label setBordered:NO];
@@ -73,24 +53,38 @@
 	[(MBCoverFlowView *)self.view setAccessoryController:labelViewController];
 	[labelViewController release];
 	
+	[(MBCoverFlowView *)self.view setImageKeyPath:@"image"];
 	[(MBCoverFlowView *)self.view setShowsScrollbar:YES];
+	
+	[NSThread detachNewThreadSelector:@selector(loadImages) toTarget:self withObject:nil];
 }
 
-- (void)dealloc
+- (void)loadImages
 {
-	[items release];
-	[super dealloc];
-}
-
-- (void)addItem:(id)sender
-{
-	/*if ([items isEqualToArray:[(MBCoverFlowView *)self.view content]]) {
-		return;
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	NSMutableArray *images = [NSMutableArray array];
+	
+	NSString *file;
+	NSDirectoryEnumerator *dirEnum = [[NSFileManager defaultManager] enumeratorAtPath:@"/Library/Desktop Pictures/Nature"];
+	
+	int count = 0;
+	while ((file = [dirEnum nextObject])) 
+	{
+		NSImage *image = [[NSImage alloc] initWithContentsOfFile:[@"/Library/Desktop Pictures/Nature" stringByAppendingPathComponent:file]];
+		if (image != nil) {
+			// Scale down the image -- CoreAnimation doesn't like huge images
+			[image setSize:NSMakeSize([image size].width/2, [image size].height/2)];
+			NSDictionary *imageInfo = [NSDictionary dictionaryWithObjectsAndKeys:image, @"image", file, @"name", nil];
+			[images addObject:imageInfo];
+		}
+		[image release];
+		
+		[(MBCoverFlowView *)self.view performSelectorOnMainThread:@selector(setContent:) withObject:images waitUntilDone:NO];
+		
+		count++;
 	}
 	
-	NSArray *content = [items subarrayWithRange:NSMakeRange(0, [[(MBCoverFlowView *)self.view content] count]+1)];
-	[(MBCoverFlowView *)self.view setContent:content];*/
-	[(MBCoverFlowView *)self.view setContent:items];
+	[pool release];
 }
 
 @end
