@@ -579,6 +579,10 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 
 - (id)selectedObject
 {
+	if ([self.content count] == 0) {
+		return nil;
+	}
+	
 	return [self.content objectAtIndex:self.selectedIndex];
 }
 
@@ -613,7 +617,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	
 	// Check the items to the right, in ascending order
 	index = self.selectedIndex+1;
-	while (index < [[_scrollLayer sublayers] count]) {
+	while (index < [self.content count]) {
 		NSRect layerRect = [self rectForItemAtIndex:index];
 		if (NSPointInRect(aPoint, layerRect)) {
 			return index;
@@ -627,11 +631,11 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 // FIXME: The frame returned is not quite wide enough. Don't know why -- probably due to the transforms
 - (NSRect)rectForItemAtIndex:(NSInteger)index
 {
-	if (index < 0 || index >= [[_scrollLayer sublayers] count]) {
+	if (index < 0 || index >= [self.content count]) {
 		return NSZeroRect;
 	}
 	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:index];
+	CALayer *layer = [self _layerForObject:[self.content objectAtIndex:index]];
 	CALayer *imageLayer = [[layer sublayers] objectAtIndex:0];
 	
 	CGRect frame = [imageLayer convertRect:[imageLayer frame] toLayer:self.layer];
