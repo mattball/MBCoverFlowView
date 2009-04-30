@@ -490,7 +490,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 	}
 	
 	NSSize size;
-	size.height = ([self frame].size.height - origin) - [self frame].size.height/3;
+	size.height = fmax(([self frame].size.height - origin) - [self frame].size.height/3, 1.0f);
 	size.width = size.height * _itemSize.width / _itemSize.height;
 	
 	// Make sure it's integral
