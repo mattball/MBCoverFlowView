@@ -80,7 +80,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 
 @implementation MBCoverFlowView
 
-@synthesize accessoryController=_accessoryController, selectedIndex=_selectedIndex, 
+@synthesize accessoryController=_accessoryController, selectionIndex=_selectionIndex, 
             itemSize=_itemSize, content=_content, showsScrollbar=_showsScrollbar,
             autoresizesItems=_autoresizesItems, imageKeyPath=_imageKeyPath,
             placeholderIcon=_placeholderIcon, target=_target, action=_action;
@@ -296,10 +296,10 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 {	
 	switch ([theEvent keyCode]) {
 		case MBLeftArrowKeyCode:
-			[self _setSelectionIndex:(self.selectedIndex - 1)];
+			[self _setSelectionIndex:(self.selectionIndex - 1)];
 			break;
 		case MBRightArrowKeyCode:
-			[self _setSelectionIndex:(self.selectedIndex + 1)];
+			[self _setSelectionIndex:(self.selectionIndex + 1)];
 			break;
 		case MBReturnKeyCode:
 			if (self.target && self.action) {
@@ -329,15 +329,15 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 {
 	if (fabs([theEvent deltaY]) > MBCoverFlowScrollMinimumDeltaThreshold) {
 		if ([theEvent deltaY] > 0) {
-			[self _setSelectionIndex:(self.selectedIndex - 1)];
+			[self _setSelectionIndex:(self.selectionIndex - 1)];
 		} else {
-			[self _setSelectionIndex:(self.selectedIndex + 1)];
+			[self _setSelectionIndex:(self.selectionIndex + 1)];
 		}
 	} else if (fabs([theEvent deltaX]) > MBCoverFlowScrollMinimumDeltaThreshold) {
 		if ([theEvent deltaX] > 0) {
-			[self _setSelectionIndex:(self.selectedIndex - 1)];
+			[self _setSelectionIndex:(self.selectionIndex - 1)];
 		} else {
-			[self _setSelectionIndex:(self.selectedIndex + 1)];
+			[self _setSelectionIndex:(self.selectionIndex + 1)];
 		}
 	}
 }
@@ -376,7 +376,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMinY relativeTo:@"superlayer" attribute:kCAConstraintMinY offset:MBCoverFlowViewContainerMinY]];
 	[_containerLayer addConstraint:[CAConstraint constraintWithAttribute:kCAConstraintMaxY relativeTo:@"superlayer" attribute:kCAConstraintMaxY offset:-10]];
 
-	self.selectedIndex = self.selectedIndex;
+	self.selectionIndex = self.selectionIndex;
 }
 
 - (BOOL)mouseDownCanMoveWindow
@@ -438,7 +438,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	}
 	
 	[_scroller setNumberOfIncrements:fmax([self.content count]-1, 0)];
-	self.selectedIndex = self.selectedIndex;
+	self.selectionIndex = self.selectionIndex;
 }
 
 - (void)setImageKeyPath:(NSString *)keyPath
@@ -536,7 +536,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	[self _recachePlaceholder];
 	[self.layer setNeedsLayout];
 	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectedIndex];
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectionIndex];
 	CGRect layerFrame = [layer frame];
 	
 	// Scroll so the selected item is centered
@@ -576,7 +576,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 
 #pragma mark Managing the Selection
 
-- (void)setSelectedIndex:(NSInteger)newIndex
+- (void)setSelectionIndex:(NSInteger)newIndex
 {
 	if (newIndex >= [[_scrollLayer sublayers] count] || newIndex < 0) {
 		return;
@@ -587,15 +587,15 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	else
 		[CATransaction setValue:[NSNumber numberWithFloat:0.7f] forKey:@"animationDuration"];
 	
-	_selectedIndex = newIndex;
+	_selectionIndex = newIndex;
 	[_scrollLayer layoutIfNeeded];
 	
-	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:_selectedIndex];
+	CALayer *layer = [[_scrollLayer sublayers] objectAtIndex:self.selectionIndex];
 	CGRect layerFrame = [layer frame];
 	
 	// Scroll so the selected item is centered
 	[_scrollLayer scrollToPoint:CGPointMake([self _positionOfSelectedItem], layerFrame.origin.y)];
-	[_scroller setIntegerValue:self.selectedIndex];
+	[_scroller setIntegerValue:self.selectionIndex];
 }
 
 - (id)selectedObject
@@ -604,7 +604,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 		return nil;
 	}
 	
-	return [self.content objectAtIndex:self.selectedIndex];
+	return [self.content objectAtIndex:self.selectionIndex];
 }
 
 - (void)setSelectedObject:(id)anObject
@@ -622,12 +622,12 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 - (NSInteger)indexOfItemAtPoint:(NSPoint)aPoint
 {
 	// Check the selected item first
-	if (NSPointInRect(aPoint, [self rectForItemAtIndex:self.selectedIndex])) {
-		return self.selectedIndex;
+	if (NSPointInRect(aPoint, [self rectForItemAtIndex:self.selectionIndex])) {
+		return self.selectionIndex;
 	}
 	
 	// Check the items to the left, in descending order
-	NSInteger index = self.selectedIndex-1;
+	NSInteger index = self.selectionIndex-1;
 	while (index >= 0) {
 		NSRect layerRect = [self rectForItemAtIndex:index];
 		if (NSPointInRect(aPoint, layerRect)) {
@@ -637,7 +637,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	}
 	
 	// Check the items to the right, in ascending order
-	index = self.selectedIndex+1;
+	index = self.selectionIndex+1;
 	while (index < [self.content count]) {
 		NSRect layerRect = [self rectForItemAtIndex:index];
 		if (NSPointInRect(aPoint, layerRect)) {
@@ -717,16 +717,16 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 - (float)_positionOfSelectedItem
 {
 	// this is the same math used in layoutSublayersOfLayer:, before tweaking
-	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectedIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
+	return floor(MBCoverFlowViewHorizontalMargin + .5*([_scrollLayer bounds].size.width - [self itemSize].width * [[_scrollLayer sublayers] count] - MBCoverFlowViewCellSpacing * ([[_scrollLayer sublayers] count] - 1))) + self.selectionIndex * ([self itemSize].width + MBCoverFlowViewCellSpacing) - .5 * [_scrollLayer bounds].size.width + .5 * [self itemSize].width;
 }
 
 - (void)_scrollerChange:(MBCoverFlowScroller *)sender
 {
 	NSScrollerPart clickedPart = [sender hitPart];
 	if (clickedPart == NSScrollerIncrementLine) {
-		[self _setSelectionIndex:(self.selectedIndex + 1)];
+		[self _setSelectionIndex:(self.selectionIndex + 1)];
 	} else if (clickedPart == NSScrollerDecrementLine) {
-		[self _setSelectionIndex:(self.selectedIndex - 1)];
+		[self _setSelectionIndex:(self.selectionIndex - 1)];
 	} else if (clickedPart == NSScrollerKnob) {
 		[self _setSelectionIndex:[sender integerValue]];
 	}
@@ -879,7 +879,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 		return;
 	}
 	
-	self.selectedIndex = index;
+	self.selectionIndex = index;
 }
 
 #pragma mark -
@@ -911,18 +911,18 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 		gradientFrame.origin.y = 0;
 		
 		// Create the perspective effect
-		if (index < self.selectedIndex) {
+		if (index < self.selectionIndex) {
 			// Left
-			frame.origin.x += [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(self.selectedIndex - index - MBCoverFlowViewPerspectiveRowScaleFactor);
+			frame.origin.x += [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(self.selectionIndex - index - MBCoverFlowViewPerspectiveRowScaleFactor);
 			imageLayer.transform = _leftTransform;
 			imageLayer.zPosition = MBCoverFlowViewPerspectiveSidePosition;
-			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (self.selectedIndex - index);
-		} else if (index > self.selectedIndex) {
+			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (self.selectionIndex - index);
+		} else if (index > self.selectionIndex) {
 			// Right
-			frame.origin.x -= [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(index - self.selectedIndex - MBCoverFlowViewPerspectiveRowScaleFactor);
+			frame.origin.x -= [self itemSize].width * MBCoverFlowViewPerspectiveSideSpacingFactor * (float)(index - self.selectionIndex - MBCoverFlowViewPerspectiveRowScaleFactor);
 			imageLayer.transform = _rightTransform;
 			imageLayer.zPosition = MBCoverFlowViewPerspectiveSidePosition;
-			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (index - self.selectedIndex);
+			sublayer.zPosition = MBCoverFlowViewPerspectiveSidePosition - 0.1 * (index - self.selectionIndex);
 		} else {
 			// Center
 			imageLayer.transform = CATransform3DIdentity;
@@ -941,7 +941,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 
 + (NSSet *)keyPathsForValuesAffectingSelectedObject
 {
-	return [NSSet setWithObjects:@"selectedIndex", nil];
+	return [NSSet setWithObjects:@"selectionIndex", nil];
 }
 
 #pragma mark -
@@ -1020,7 +1020,7 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	} else if (context == &MBCoverFlowViewSelectionIndexContext) {
 		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
 		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
-		self.selectedIndex = [[container valueForKeyPath:keyPath] integerValue];
+		self.selectionIndex = [[container valueForKeyPath:keyPath] integerValue];
 	} else if (context == &MBCoverFlowViewImagePathContext) {
 		[self _refreshLayer:[self _layerForObject:object]];
 	} else {

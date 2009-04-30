@@ -30,13 +30,11 @@
 @class MBCoverFlowScroller;
 
 /**
- * @class       MBCoverFlowView
- *
  * @brief       An NSView subclass which displays a collection of
  *              items using the Cover Flow style.
  */
 @interface MBCoverFlowView : NSView {
-	NSInteger _selectedIndex;
+	NSInteger _selectionIndex;
 	
 	// Layers
 	CAScrollLayer *_scrollLayer;
@@ -78,12 +76,16 @@
 
 /**
  * @brief       The receiver's content object.
+ *
+ * @see         imageKeyPath
  */
 @property (nonatomic, copy) NSArray *content;
 
 /**
  * @brief       The key path which returns the image for an item
  *              in the receiver's \c content array.
+ *
+ * @see         content
  */
 @property (nonatomic, copy) NSString *imageKeyPath;
 
@@ -110,7 +112,6 @@
 
 /**
  * @brief       The controller which manages the receiver's accessory view.
- *
  * @details     The accessory controller's representedObject will be bound
  *              to the receiver's selectedObject. The accessory controller's 
  *              view will be displayed below the flow images.
@@ -119,7 +120,7 @@
 
 /**
  * @brief       The icon which will be displayed for items which have not had
- *              image data loaded.
+			    image data loaded.
  * @details     This image should preferably be a template icon (using NSImage's
  *              \c -setTemplate: method), so that the view can color the icon
  *              appropriately.
@@ -132,11 +133,15 @@
 
 /**
  * @brief       The index of the receiver's front-most item.
+ *
+ * @see         selectedObject
  */
-@property (nonatomic, assign) NSInteger selectedIndex;
+@property (nonatomic, assign) NSInteger selectionIndex;
 
 /**
  * @brief       The receiver's front-most item.
+ *
+ * @see         selectionIndex
  */
 @property (nonatomic, assign) id selectedObject;
 
@@ -146,6 +151,8 @@
 
 /**
  * @brief       The target object that receives action messages from the view.
+ *
+ * @see         action
  */
 @property (nonatomic, assign) id target;
 
@@ -153,6 +160,8 @@
  * @brief       The selector associated with the view.
  * @details     The action will be called when the user double-clicks an item
  *              or presses the Return key.
+ *
+ * @see         target
  */
 @property (nonatomic, assign) SEL action;
 
@@ -168,6 +177,8 @@
  *
  * @return      A rectangle defining the area in which the view draws the
  *              item at \c index, or \c NSZeroRect if the index is invalid.
+ *
+ * @see         indexOfItemAtPoint:
  */
 - (NSRect)rectForItemAtIndex:(NSInteger)index;
 
@@ -178,6 +189,8 @@
  *
  * @return      The index of the flow item \c aPoint lies in, or \c NSNotFound
  *              is \c aPoint does not lie inside an item.
+ *
+ * @see         rectForItemAtIndex:
  */
 - (NSInteger)indexOfItemAtPoint:(NSPoint)aPoint;
 
