@@ -56,10 +56,8 @@ const float MBCoverFlowViewPerspectiveSideSpacingFactor = 0.75;
 const float MBCoverFlowViewPerspectiveRowScaleFactor = 0.85;
 const float MBCoverFlowViewPerspectiveAngle = 0.79;
 
-// Bindings
-static NSString *MBCoverFlowViewContentBindingContext;
+// KVO
 static NSString *MBCoverFlowViewImagePathContext;
-static NSString *MBCoverFlowViewSelectionIndexContext;
 
 // Key Codes
 #define MBLeftArrowKeyCode 123
@@ -944,97 +942,13 @@ static NSString *MBCoverFlowViewSelectionIndexContext;
 	return [NSSet setWithObjects:@"selectionIndex", nil];
 }
 
-#pragma mark -
-#pragma mark Bindings
-
-- (void)bind:(NSString *)bindingName toObject:(id)observableObject withKeyPath:(NSString *)observableKeyPath options:(NSDictionary *)options
-{
-	if ([bindingName isEqualToString:@"content"]) {
-		if ([_bindingInfo objectForKey:@"content"] != nil) {
-			[self unbind:@"content"];
-		}
-		
-		// Observe controller for changes
-		NSDictionary *bindingsData = [NSDictionary dictionaryWithObjectsAndKeys:
-									  observableObject, NSObservedObjectKey,
-									  [[observableKeyPath copy] autorelease], NSObservedKeyPathKey,
-									  [[options copy] autorelease], NSOptionsKey, nil];
-		[_bindingInfo setObject:bindingsData forKey:@"content"];
-		
-		[observableObject addObserver:self
-						   forKeyPath:observableKeyPath
-							  options:(NSKeyValueObservingOptionNew |
-									   NSKeyValueObservingOptionOld)
-							  context:&MBCoverFlowViewContentBindingContext];
-	} else if ([bindingName isEqualToString:@"selectionIndex"]) {
-		if ([_bindingInfo objectForKey:@"selectionIndex"] != nil) {
-			[self unbind:@"selectionIndex"];
-		}
-		
-		// Observe controller for changes
-		NSDictionary *bindingsData = [NSDictionary dictionaryWithObjectsAndKeys:
-									  observableObject, NSObservedObjectKey,
-									  [[observableKeyPath copy] autorelease], NSObservedKeyPathKey,
-									  [[options copy] autorelease], NSOptionsKey, nil];
-		[_bindingInfo setObject:bindingsData forKey:@"selectionIndex"];
-		
-		[observableObject addObserver:self
-						   forKeyPath:observableKeyPath
-							  options:(NSKeyValueObservingOptionNew |
-									   NSKeyValueObservingOptionOld)
-							  context:&MBCoverFlowViewSelectionIndexContext];
-	} else {
-		[super bind:bindingName toObject:observableObject withKeyPath:observableKeyPath options:options];
-	}
-	[self setNeedsDisplay:YES];
-}
-
-- (void)unbind:(NSString *)bindingName
-{
-	if ([bindingName isEqualToString:@"content"])
-	{
-		id container = [[self infoForBinding:@"content"] objectForKey:NSObservedObjectKey];
-		NSString *keyPath = [[self infoForBinding:@"content"] objectForKey:NSObservedKeyPathKey];
-		
-		[container removeObserver:self forKeyPath:keyPath];
-		[_bindingInfo removeObjectForKey:@"content"];
-		self.content = nil;
-	} else if ([bindingName isEqualToString:@"selectionIndex"]) {
-		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
-		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
-		
-		[container removeObserver:self forKeyPath:keyPath];
-		[_bindingInfo removeObjectForKey:@"selectionIndex"];
-	} else {
-		[super unbind:bindingName];
-	}
-	[self setNeedsDisplay:YES];
-}
-
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-	if (context == &MBCoverFlowViewContentBindingContext) {
-		id container = [[self infoForBinding:@"content"] objectForKey:NSObservedObjectKey];
-		NSString *keyPath = [[self infoForBinding:@"content"] objectForKey:NSObservedKeyPathKey];
-		self.content = [container valueForKeyPath:keyPath];
-	} else if (context == &MBCoverFlowViewSelectionIndexContext) {
-		id container = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedObjectKey];
-		NSString *keyPath = [[self infoForBinding:@"selectionIndex"] objectForKey:NSObservedKeyPathKey];
-		self.selectionIndex = [[container valueForKeyPath:keyPath] integerValue];
-	} else if (context == &MBCoverFlowViewImagePathContext) {
+	if (context == &MBCoverFlowViewImagePathContext) {
 		[self _refreshLayer:[self _layerForObject:object]];
 	} else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 	}
-}
-
-- (NSDictionary *)infoForBinding:(NSString *)bindingName
-{
-	NSDictionary *info = [_bindingInfo objectForKey:bindingName];
-	if (info == nil) {
-		info = [super infoForBinding:bindingName];
-	}
-	return info;
 }
 
 @end
