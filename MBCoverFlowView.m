@@ -302,8 +302,8 @@ static NSString *MBCoverFlowViewImagePathContext;
 		case MBReturnKeyCode:
 			if (self.target && self.action) {
 				[self.target performSelector:self.action withObject:self];
+				break;
 			}
-			break;
 		default:
 			[super keyDown:theEvent];
 			break;
@@ -598,7 +598,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 
 - (id)selectedObject
 {
-	if ([self.content count] == 0) {
+	if ([self.content count] == 0 || self.selectionIndex >= [self.content count]) {
 		return nil;
 	}
 	
