@@ -565,6 +565,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 	if (aController != nil) {
 		_accessoryController = [aController retain];
 		[self addSubview:self.accessoryController.view];
+		[self.accessoryController setNextResponder:[self nextResponder]];
 		[self setNextResponder:self.accessoryController];
 		[self.accessoryController bind:@"representedObject" toObject:self withKeyPath:@"selectedObject" options:nil];
 	}
