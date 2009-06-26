@@ -416,6 +416,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 		}
 		[self _refreshLayer:layer];
 	}
+	[itemsToAdd release];
 	
 	// Remove any items which are no longer present
 	NSMutableArray *itemsToRemove = [oldContent mutableCopy];
@@ -427,6 +428,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 		}
 		[layer removeFromSuperlayer];
 	}
+	[itemsToRemove release];
 	
 	[oldContent release];
 	
