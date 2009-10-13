@@ -863,6 +863,8 @@ static NSString *MBCoverFlowViewImagePathContext;
 			reflectionLayer.contents = (id)_placeholderRef;
 		}
 	}
+	
+	[placeholder release];
 }
 
 - (void)_setSelectionIndex:(NSInteger)index
