@@ -29,7 +29,7 @@
 
 @implementation NSImage (MBCoverFlowAdditions)
 
-- (CGImageRef)imageRef
+- (CGImageRef)imageRefCopy
 {
 	CGContextRef context = CGBitmapContextCreate(NULL/*data - pass NULL to let CG allocate the memory*/, 
 												   [self size].width,  

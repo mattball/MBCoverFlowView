@@ -769,7 +769,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 			imageRef = CGImageRetain(_placeholderRef);
 			[layer setValue:[NSNumber numberWithBool:NO] forKey:@"hasImage"];
 		} else {
-			imageRef = [image imageRef];
+			imageRef = [image imageRefCopy];
 			[layer setValue:[NSNumber numberWithBool:YES] forKey:@"hasImage"];
 		}
 		
@@ -852,7 +852,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 	
 	[placeholder unlockFocus];
 	
-	_placeholderRef = [placeholder imageRef];
+	_placeholderRef = [placeholder imageRefCopy];
 	
 	// Update the placeholder for all necessary items
 	for (CALayer *layer in [_scrollLayer sublayers]) {

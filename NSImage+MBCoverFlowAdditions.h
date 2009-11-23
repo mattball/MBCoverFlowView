@@ -38,6 +38,6 @@
  *
  * @return      A CGImageRef representation for the image.
  */
-- (CGImageRef)imageRef;
+- (CGImageRef)imageRefCopy;
 
 @end
