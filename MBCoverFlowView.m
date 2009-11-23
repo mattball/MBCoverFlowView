@@ -66,7 +66,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 
 @interface MBCoverFlowView ()
 - (float)_positionOfSelectedItem;
-- (CALayer *)_newLayer;
+- (CALayer *)_insertLayerInScrollLayer;
 - (void)_scrollerChange:(MBCoverFlowScroller *)scroller;
 - (void)_refreshLayer:(CALayer *)layer;
 - (void)_loadImageForLayer:(CALayer *)layer;
@@ -409,7 +409,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 	[itemsToAdd removeObjectsInArray:oldContent];
 	
 	for (NSObject *object in itemsToAdd) {
-		CALayer *layer = [self _newLayer];
+		CALayer *layer = [self _insertLayerInScrollLayer];
 		[layer setValue:object forKey:@"representedObject"];
 		if (self.imageKeyPath) {
 			[object addObserver:self forKeyPath:self.imageKeyPath options:0 context:&MBCoverFlowViewImagePathContext];
@@ -667,7 +667,7 @@ static NSString *MBCoverFlowViewImagePathContext;
 #pragma mark -
 #pragma mark Private Methods
 
-- (CALayer *)_newLayer
+- (CALayer *)_insertLayerInScrollLayer
 {
 	/* this enables a perspective transform.  The value of zDistance
 	 affects the sharpness of the transform */
